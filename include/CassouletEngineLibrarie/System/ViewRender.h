@@ -13,8 +13,6 @@ class CASSOULET_DLL ViewRender {
 public:
 	ViewRender();
 
-
-
 	void GLInit(int width, int height);
 	void UpdateCameraMovement(float dt);
 	void Clear();

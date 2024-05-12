@@ -13,14 +13,16 @@ public:
 	Mesh::~Mesh();
 
 	static Mesh* CreateMesh(GLfloat* vertices, GLubyte* indices, int countVertice, int countUV);
+	static Mesh* CreateMesh(std::array<GLfloat,180>& mesh,int countVertice);
 
 	static Mesh* CreateCube();
 	static Mesh* CreateQuad();
 	static Mesh* CreateTriangle();
 	static Mesh* CreateSphere(int subdivisions);
+	void SetIndices(const GLubyte* uv, int uvCount);
+	void SetMesh(std::array<GLfloat, 180>& mesh);
 
 	void Draw();
-	void SetIndices(const GLubyte* uv, int uvCount);
 	void SetVertices(GLfloat* pvertices,int pverticesCount);
 	void SetTexture(sf::Texture* ptexture, GLubyte* texture_coord, bool isTransparent);
 	bool doubleSided;
@@ -41,4 +43,5 @@ private:
 	//true of the mesh has vertices
 	bool hasVertices;
 
+	std::array<GLfloat, 180> m_mesh ;
 };

@@ -1,6 +1,9 @@
 #pragma once
 #include <CassouletEngineLibrarie/System/Libs.h>
 
+class Vector3;
+class Vector2;
+
 class CASSOULET_DLL IMGUICPP {
 public:
     static void DrawVector4Windowf(float& x, float& y, float& z, float& w, const std::string& title) {
@@ -37,6 +40,7 @@ public:
 
     static void DrawVector3Windowf(float& x, float& y, float& z, const std::string& title) {
         ImGui::Begin(title.c_str());
+        ImGui::SetWindowSize(ImVec2(300, 300));
 
         ImGui::InputFloat("X", &x);
         ImGui::InputFloat("Y", &y);
@@ -47,6 +51,7 @@ public:
 
     static void DrawVector3Windowi(int& x, int& y, int& z, const std::string& title) {
         ImGui::Begin(title.c_str());
+        ImGui::SetWindowSize(ImVec2(300, 300));
 
         ImGui::InputInt("X", &x);
         ImGui::InputInt("Y", &y);
@@ -59,10 +64,14 @@ public:
         DrawVector3Windowf(vec.x, vec.y, vec.z, title);
     }
 
+    static void DrawVector3Windowf(Vector3& vec, const std::string& title);
+    
+    static void DrawVector2Windowf(Vector2& vec, const std::string& title);
+
     static void DrawVector2Windowf(float& x, float& y, const std::string& title) {
 
         ImGui::Begin(title.c_str());
-        ImGui::SetWindowSize(ImVec2(300, 300));
+        ImGui::SetWindowSize(ImVec2(300, 300)); 
 
         ImGui::InputFloat("X", &x);
         ImGui::InputFloat("Y", &y);
@@ -90,7 +99,6 @@ public:
 public:
     static void DrawVector4Windowf(float& x, float& y, float& z, float& w) {
 
-
         ImGui::InputFloat("X", &x);
         ImGui::InputFloat("Y", &y);
         ImGui::InputFloat("Z", &z);
@@ -112,6 +120,7 @@ public:
     }
 
     static void DrawVector4Windowf(Vec4& vec) {
+        ImGui::SetWindowSize(ImVec2(300, 300));
         DrawVector4Windowf(vec.x, vec.y, vec.z, vec.w);
     }
 
@@ -133,6 +142,7 @@ public:
     }
 
     static void DrawVector3Windowf(Vec3& vec) {
+        ImGui::SetWindowSize(ImVec2(300, 300));
         DrawVector3Windowf(vec.x, vec.y, vec.z);
     }
 
@@ -150,6 +160,7 @@ public:
     }
 
     static void DrawVector2Windowf(Vec2& vec) {
+        ImGui::SetWindowSize(ImVec2(300, 300));
         DrawVector2Windowf(vec.x, vec.y);
     }
 };

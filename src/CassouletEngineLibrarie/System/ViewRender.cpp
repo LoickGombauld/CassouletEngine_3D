@@ -57,7 +57,7 @@ ViewRender::ViewRender()
 	m_objtest = new GameObject();
 	m_objtest2 = new GameObject();
 	m_cam = GameManager::Instance().addComponent<Camera>(m_objCam->id);
-	m_mesh = GameManager::Instance().addComponent<Mesh>(m_objtest->id, Mesh::CreateCube());
+	m_mesh = GameManager::Instance().addComponent<Mesh>(m_objtest->id, Mesh::CreateQuad());
 	m_mesh2 = GameManager::Instance().addComponent<Mesh>(m_objtest2->id, Mesh::CreateCube());
 	m_objtest2->transform.position = Vector3(25, 0, 0);
 	t = new Test();
@@ -113,27 +113,26 @@ void ViewRender::Clear()
 }
 
 void ViewRender::UIRender() {
-	Vec3 campos = Vec3(m_objCam->transform.position.x, m_objCam->transform.position.y, m_objCam->transform.position.z);
-	IMGUICPP::DrawVector3Windowf(campos, "Camera Postion");
-	Vec3 camrot = Vec3(m_objCam->transform.rotation.x, m_objCam->transform.rotation.y, m_objCam->transform.rotation.z);
-	IMGUICPP::DrawVector3Windowf(camrot, "Camera Rotation");
-	IMGUICPP::DrawVector3Windowf(m_boxScale, "Cube Scale");
+
 	ImGui::Begin("Camera Speed");
+	IMGUICPP::DrawVector3Windowf(m_objCam->transform.position, "Camera Postion");
+	IMGUICPP::DrawVector3Windowf(m_objCam->transform.rotation, "Camera Rotation");
+
+	IMGUICPP::DrawVector3Windowf(m_objtest->transform.position, "Cube 1 Position");
+	IMGUICPP::DrawVector3Windowf(m_objtest2->transform.position, "Cube 2 Position");
+	IMGUICPP::DrawVector3Windowf(m_boxScale, "Cube Scale");
 	ImGui::InputFloat("speed", &m_cameraspeed);
 	ImGui::End();
 
-	m_objCam->transform.position = Vector3(campos.x, campos.y, campos.z);
-	m_objCam->transform.rotation = Vector3(camrot.x, camrot.y, camrot.z);
 	m_objtest->transform.scale = Vector3(m_boxScale.x, m_boxScale.y, m_boxScale.z);
 }
 
 void ViewRender::Render(sf::RenderWindow& window)
 {
-
 	//t->render3D(window);
-
 	GameManager::Instance().DrawAllGameObjects();
-
+	//m_objtest->Draw();
+	//m_objtest2->Draw();
 }
 
 static bool init_shader(std::shared_ptr<sf::Shader>& shader)

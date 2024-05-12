@@ -25,7 +25,11 @@ Mesh::~Mesh()
 	if (vertices != nullptr)
 		delete vertices;
 }
-
+void Mesh::SetMesh(std::array<GLfloat, 180>& mesh)
+{
+	m_mesh = mesh;
+	hasVertices = true;
+}
 
 void Mesh::SetVertices(GLfloat* pvertices, int pverticesCount)
 {
@@ -67,6 +71,11 @@ void Mesh::Draw()
 		texture->create(10, 10);
 	}
 
+	// Apply some transformations
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+
 	//set position
 	glTranslatef(gameObject->transform.position.x, gameObject->transform.position.y, -gameObject->transform.position.z);
 
@@ -78,7 +87,8 @@ void Mesh::Draw()
 	//set scale
 	glScalef(gameObject->transform.scale.x, gameObject->transform.scale.y, gameObject->transform.scale.z);
 
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	//disable cullface if we want to draw both sides, else enable it
 	if (doubleSided)
@@ -87,26 +97,25 @@ void Mesh::Draw()
 		glEnable(GL_CULL_FACE);
 
 	//enable textures and set filter mode to nearest, we want to use nearest to get a clear pixel art style
-	glEnable(GL_TEXTURE_2D);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	//glEnable(GL_TEXTURE_2D);
+	//sf::Texture::bind(texture);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	//bind texture
 	//glBindTexture(GL_TEXTURE_2D, texture->getNativeHandle());
+		// Enable position and texture coordinates vertex components
 
-	  // Configuration des attributs des vertices
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 0, vertices);
-	glColorPointer(3, GL_FLOAT, 0, colors);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glVertexPointer(3, GL_FLOAT, 5 * sizeof(GLfloat), m_mesh.data());
+	glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(GLfloat), m_mesh.data() + 3);
 
-	// Dessin du cube
-	glDrawElements(GL_TRIANGLES, indiceCount, GL_UNSIGNED_BYTE, indices);
-
-	// Désactivation des attributs
+	// Disable normal and color vertex components
+	glDisableClientState(GL_NORMAL_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
-	glDisableClientState(GL_TEXTURE_2D);
-	glDisableClientState(GL_VERTEX_ARRAY);
+
+	glDrawArrays(GL_TRIANGLES, 0, verticesCount);
 }
 
 void Mesh::SetIndices(const GLubyte* indices, int indiceCount)
@@ -142,50 +151,82 @@ Mesh* Mesh::CreateMesh(GLfloat* vertices, GLubyte* indices, int countVertice, in
 	return mesh;
 }
 
+Mesh* Mesh::CreateMesh(std::array<GLfloat, 180>& pmesh, int verticeCount)
+{
+	Mesh* mesh = new Mesh();
+	mesh->SetMesh(pmesh);
+	mesh->verticesCount = verticeCount;
+
+	return mesh;
+}
+
 Mesh* Mesh::CreateCube()
 {
-	// Définition des sommets du cube
-	std::vector<GLfloat> vertices = {
-			-1, -1, -1, // Face arrière
-			1, -1, -1,
-			1, 1, -1,
-			-1, 1, -1,
-			-1, -1, 1,  // Face avant
-			1, -1, 1,
-			1, 1, 1,
-			-1, 1, 1
+	std::array<GLfloat, 180> cube =
+	{
+			-1, -1, -1,  0, 0,
+			-1,  1, -1,  1, 0,
+			-1, -1,  1,  0, 1,
+			-1, -1,  1,  0, 1,
+			-1,  1, -1,  1, 0,
+			-1,  1,  1,  1, 1,
+
+			 1, -1, -1,  0, 0,
+			 1,  1, -1,  1, 0,
+			 1, -1,  1,  0, 1,
+			 1, -1,  1,  0, 1,
+			 1,  1, -1,  1, 0,
+			 1,  1,  1,  1, 1,
+
+			-1, -1, -1,  0, 0,
+			 1, -1, -1,  1, 0,
+			-1, -1,  1,  0, 1,
+			-1, -1,  1,  0, 1,
+			 1, -1, -1,  1, 0,
+			 1, -1,  1,  1, 1,
+
+			-1,  1, -1,  0, 0,
+			 1,  1, -1,  1, 0,
+			-1,  1,  1,  0, 1,
+			-1,  1,  1,  0, 1,
+			 1,  1, -1,  1, 0,
+			 1,  1,  1,  1, 1,
+
+			-1, -1, -1,  0, 0,
+			 1, -1, -1,  1, 0,
+			-1,  1, -1,  0, 1,
+			-1,  1, -1,  0, 1,
+			 1, -1, -1,  1, 0,
+			 1,  1, -1,  1, 1,
+
+			-1, -1,  1,  0, 0,
+			 1, -1,  1,  1, 0,
+			-1,  1,  1,  0, 1,
+			-1,  1,  1,  0, 1,
+			 1, -1,  1,  1, 0,
+			 1,  1,  1,  1, 1
 	};
 
-	// Définition des coordonnées de texture (UV)
-	std::vector<GLubyte> indices = {
-			0, 1, 2, 2, 3, 0, // Face arrière
-			1, 5, 6, 6, 2, 1, // Face droite
-			4, 5, 6, 6, 7, 4, // Face avant
-			0, 4, 7, 7, 3, 0, // Face gauche
-			0, 1, 5, 5, 4, 0, // Face inférieure
-			3, 2, 6, 6, 7, 3  // Face supérieure
-	};
-
-	return CreateMesh(vertices.data(), indices.data(), vertices.size(), indices.size());
+	return CreateMesh(cube, 36);
 }
 
 Mesh* Mesh::CreateQuad() {
-	std::vector<GLfloat> vertices = {
-			-0.5f, -0.5f, -0.5f, // Face arrière
-			0.5f, -0.5f, -0.5f,
-			0.5f, 0.5f, -0.5f,
-			-0.5f, 0.5f, -0.5f
-	};
+	std::array<GLfloat, 180> quad =
+	{
+		// positions // texture coordinates
+		-1, -1,  1,  0, 0,
+		 1, -1,  1,  1, 0,
+		-1,  1,  1,  0, 1,
+		-1,  1,  1,  0, 1,
+		 1, -1,  1,  1, 0,
+		 1,  1,  1,  1, 1
 
-	std::vector<GLubyte>  indices = {
-		0, 1, 2, 2, 3, 0
 	};
-
-	return CreateMesh(vertices.data(), indices.data(), vertices.size(), indices.size());
+	return CreateMesh(quad, 6);
 }
 
 Mesh* Mesh::CreateTriangle() {
-	std:: vector<GLfloat> vertices = {
+	std::vector<GLfloat> vertices = {
 	-0.5f, -0.5f, 0.0f,
 	 0.5f, -0.5f, 0.0f,
 	 0.0f,  0.5f, 0.0f
@@ -195,7 +236,7 @@ Mesh* Mesh::CreateTriangle() {
 	0, 1, 2
 	};
 
-	return CreateMesh(vertices.data(), indices.data(), vertices.size(),indices.size());
+	return CreateMesh(vertices.data(), indices.data(), vertices.size(), indices.size());
 }
 
 Mesh* Mesh::CreateSphere(int resolution) {
@@ -243,5 +284,5 @@ Mesh* Mesh::CreateSphere(int resolution) {
 			indices.push_back(t);
 		}
 	}
-	return CreateMesh(vertices.data(),indices.data(),vertices.size(), indices.size());
+	return CreateMesh(vertices.data(), indices.data(), vertices.size(), indices.size());
 }

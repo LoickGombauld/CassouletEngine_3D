@@ -17,9 +17,9 @@ void GameManager::destroyEntity(entt::entity& entity) {
 
 void GameManager::DrawAllGameObjects()
 {
-    for (auto i : registry.view<GameObject*>())
+    for (auto& i : registry.view<GameObject*>())
     {
-     auto & obj =  registry.get<GameObject*>(i);
+     auto& obj =  registry.get<GameObject*>(i);
      if (obj->enabled)
      {
          obj->Draw();
@@ -29,7 +29,7 @@ void GameManager::DrawAllGameObjects()
 
 void GameManager::UpdateAllGameObjects()
 {
-    for (auto i : registry.view<GameObject*>())
+    for (auto& i : registry.view<GameObject*>())
     {
         auto& obj = registry.get<GameObject*>(i);
         if (obj->enabled)

@@ -77,7 +77,7 @@ void Map::BuildLinedef()
 {
 	WADLinedef wadlinedef;
 	Linedef linedef;
-
+	float SCALE = 100;
 	for (int i = 0; i < m_pLinedefs->size(); ++i)
 	{
 		wadlinedef = m_pLinedefs->at(i);
@@ -109,16 +109,25 @@ void Map::BuildLinedef()
 		m_Linedefs.push_back(linedef);
 	}
 
-	//for (int i = 0; i < m_Linedefs.size(); i++)
-	//{
-	//	GameObject* obj = new GameObject();
-	//	Mesh* mesh = GameManager::Instance().addComponent<Mesh>(obj->id, Mesh::CreateCube());
-	//	WADLinedef* linedef = &m_pLinedefs->at(i);
-	//	auto start = m_Vertexes[linedef->StartVertexID];
-	//	auto end = m_Vertexes[linedef->EndVertexID];
-	//	obj->transform.position = Vector3(start.XPosition / 100, 0.f, start.YPosition / 100);
-	//	m_objects.push_back(obj);
-	//}
+	for (int i = 0; i < m_Linedefs.size(); i++)
+	{
+		GameObject* obj = new GameObject();
+		Mesh* mesh = GameManager::Instance().addComponent<Mesh>(obj->id, Mesh::CreateQuad());
+		WADLinedef* linedef = &m_pLinedefs->at(i);
+		auto start = m_Vertexes[linedef->StartVertexID];
+		auto end = m_Vertexes[linedef->EndVertexID];
+		start.XPosition /= SCALE;
+		start.YPosition /= SCALE;
+		end.XPosition /= SCALE;
+		end.YPosition /= SCALE;
+
+		float x = start.XPosition - end.XPosition, y = start.YPosition - end.YPosition;
+		float size = sqrtf(x * x + y * y);
+
+		obj->transform.position = Vector3(start.XPosition, 0.f, start.YPosition);
+		obj->transform.scale = Vector3(size, 1.f, 1.f);
+		m_objects.push_back(obj);
+	}
 	delete m_pLinedefs;
 	m_pLinedefs = nullptr;
 }
@@ -260,6 +269,13 @@ std::string Map::GetName()
 void Map::Render3DView()
 {
 	RenderBSPNodes();
+}
+
+void Map::Render3DTest() {
+	for  (GameObject* var : m_objects)
+	{
+		var->Draw();
+	}
 }
 
 void Map::RenderBSPNodes()

@@ -63,12 +63,12 @@ void CassouletEngine::Render()
 	m_pViewRender->UIRender();
 	m_pViewRender->Clear();
 	m_pViewRender->Render(m_window);
+	m_pMap->Render3DTest();
 	ImGui::SFML::Render(m_window);
 	m_window.display();
 
 	//m_pDisplayManager->InitFrame();
 	//m_pViewRender->Render( m_iRenderWidth);
-	m_pMap->RenderAutoMap(m_window);
 	//m_pPlayer->Render( m_iRenderWidth);
 	//m_pDisplayManager->Render();
 }

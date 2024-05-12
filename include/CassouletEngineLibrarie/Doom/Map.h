@@ -23,6 +23,7 @@ public:
 	void AddSidedef(WADSidedef& sidedef);
 	void AddSector(WADSector& sector);
 	void Render3DView();
+	void Render3DTest();
 	void RenderAutoMap(sf::RenderWindow& pWindow);
 	void SetLumpIndex(int iIndex);
 	void Init();

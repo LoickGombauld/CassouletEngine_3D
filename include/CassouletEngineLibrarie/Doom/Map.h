@@ -5,6 +5,7 @@
 class Player;
 class ViewRender;
 class Things;
+class GameObject;
 
 
 class CASSOULET_DLL Map
@@ -61,6 +62,8 @@ protected:
 	std::vector<WADSidedef>* m_pSidedefs;
 	std::vector<WADLinedef>* m_pLinedefs;
 	std::vector<WADSeg>* m_pSegs;
+
+	std::vector<GameObject*> m_objects;
 
 	int m_XMin;
 	int m_XMax;

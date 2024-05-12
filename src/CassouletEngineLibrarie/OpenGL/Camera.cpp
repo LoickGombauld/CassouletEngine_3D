@@ -21,7 +21,7 @@ void Camera::Draw()
 	glMatrixMode(GL_MODELVIEW_MATRIX);
 
 	//clear and set background color
-	glClearColor(0.1f, 0.1f,0.1f,0.1f);
+	glClearColor(0.1, 0.1,0.1,0.1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	//set rotation

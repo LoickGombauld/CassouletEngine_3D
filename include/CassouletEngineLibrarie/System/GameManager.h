@@ -15,9 +15,13 @@ public:
 	GameManager(const GameManager&) = delete;
 	GameManager& operator=(const GameManager&) = delete;
 
+
 	void createEntity(GameObject* obj);
 
 	void destroyEntity(entt::entity& entity);
+	
+	void UpdateAllGameObjects();
+	void DrawAllGameObjects();
 
 	ComponentManager* addComponentManager(entt::entity& entity);
 
@@ -30,7 +34,6 @@ public:
 		assert(it != getComponentManager(entity)->m_ComponentManagers.end() && "Component not found in map");
 		getComponentManager(entity)->m_ComponentManagers.erase(componentName);
 	}
-
 
 
 	template <class T>
@@ -47,7 +50,6 @@ public:
 		// Retourner le pointeur vers le composant nouvellement créé
 		return component;
 	}
-
 
 
 	template <class T>
@@ -82,6 +84,8 @@ public:
 private:
 	GameManager() = default;
 	~GameManager() = default;
+
+
 
 	entt::registry registry;
 

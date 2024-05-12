@@ -26,6 +26,7 @@ Mesh::~Mesh()
 		delete vertices;
 }
 
+
 void Mesh::SetVertices(GLfloat* pvertices, int pverticesCount)
 {
 	if (vertices != nullptr)
@@ -145,14 +146,14 @@ Mesh* Mesh::CreateCube()
 {
 	// Définition des sommets du cube
 	std::vector<GLfloat> vertices = {
-			-0.5f, -0.5f, -0.5f, // Face arrière
-			0.5f, -0.5f, -0.5f,
-			0.5f, 0.5f, -0.5f,
-			-0.5f, 0.5f, -0.5f,
-			-0.5f, -0.5f, 0.5f,  // Face avant
-			0.5f, -0.5f, 0.5f,
-			0.5f, 0.5f, 0.5f,
-			-0.5f, 0.5f, 0.5f
+			-1, -1, -1, // Face arrière
+			1, -1, -1,
+			1, 1, -1,
+			-1, 1, -1,
+			-1, -1, 1,  // Face avant
+			1, -1, 1,
+			1, 1, 1,
+			-1, 1, 1
 	};
 
 	// Définition des coordonnées de texture (UV)

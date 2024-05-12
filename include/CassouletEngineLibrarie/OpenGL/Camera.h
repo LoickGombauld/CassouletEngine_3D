@@ -15,7 +15,7 @@ public:
 	//field of view
 	int fov = 90;
 	//distance from the camera the game will begin to render
-	float nearClip = 0.1f;
+	float nearClip = 0.1;
 	//how far from the camera the game will render
 	float farClip = 100.0f;
 

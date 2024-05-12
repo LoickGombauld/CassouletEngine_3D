@@ -13,6 +13,8 @@ public:
 	//game object world rotation
 	Vector3 rotation;
 
+	void Translate(Vector3 translation);
+
 	//returns a vector pointing up relative to the position and rotation of the game object
 	Vector3 Up();
 	//returns a vector pointing down relative to the position and rotation of the game object

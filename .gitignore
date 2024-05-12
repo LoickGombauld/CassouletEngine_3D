@@ -1,0 +1,17 @@
+# Xmake cache
+.xmake/
+build/
+
+# MacOS Cache
+.DS_Store
+
+
+/bin
+.gitattributes
+*.bat
+*.ipch
+*.opendb
+*.db
+*.db-wal
+*.db-shm
+*.lua

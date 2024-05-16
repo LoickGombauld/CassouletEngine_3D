@@ -16,21 +16,19 @@ CassouletEngine::~CassouletEngine()
 
 bool CassouletEngine::Init()
 {
-	m_window.create(sf::VideoMode(m_iRenderWidth, m_iRenderHeight), m_sAppName, sf::Style::Default);
-	sf::ContextSettings settings = m_window.getSettings();
+	sf::ContextSettings settings ;
+	m_window.create(sf::VideoMode(m_iRenderWidth, m_iRenderHeight), m_sAppName, sf::Style::Default,settings);
 	std::cout << "OpenGL version:" << settings.majorVersion << "." << settings.minorVersion << std::endl;
 	settings.depthBits = 24;
 	settings.stencilBits = 8;
 	settings.antialiasingLevel = 4;
 	m_window.setActive(true);
-	if (!glewInit())
+	if (glewInit() != GLEW_OK)
 	{
 		return false;
 	}
-
-	m_window.setFramerateLimit(144);
-	m_window.setActive();
 	ImGui::SFML::Init(m_window);
+	m_window.setFramerateLimit(144);
 
 	// Load WAD 
 	LoadWAD();
@@ -65,8 +63,8 @@ std::string CassouletEngine::GetWADFileName()
 
 void CassouletEngine::Render()
 {
-	m_pViewRender->UIRender();
 	m_pViewRender->Clear();
+	m_pViewRender->UIRender();
 	m_pViewRender->Render(m_window);
 	m_pMap->Render3DTest();
 	ImGui::SFML::Render(m_window);
@@ -156,14 +154,14 @@ void CassouletEngine::ProcessMouseMovement(float xPos, float yPos) {
 	xOffset *= m_pViewRender->m_cameraSensitivity;
 	yOffset *= m_pViewRender->m_cameraSensitivity;
 
-	m_pViewRender->m_objCam->transform.rotation.y += xOffset* m_dt.asSeconds();
-	m_pViewRender->m_objCam->transform.rotation.x -= yOffset* m_dt.asSeconds();
+	m_pViewRender->m_objCam->transform.rotation.y += xOffset * m_dt.asSeconds();
+	m_pViewRender->m_objCam->transform.rotation.x -= yOffset * m_dt.asSeconds();
 
 
 	// Limiter l'angle de tangage entre -89° et 89° pour éviter les erreurs de calcul
 	if (m_pViewRender->m_objCam->transform.rotation.x > 89.0f)
 		m_pViewRender->m_objCam->transform.rotation.x = 89.0f;
-	if (m_pViewRender->m_objCam->transform.rotation.x < -89.0f) 
+	if (m_pViewRender->m_objCam->transform.rotation.x < -89.0f)
 		m_pViewRender->m_objCam->transform.rotation.x = -89.0f;
 }
 

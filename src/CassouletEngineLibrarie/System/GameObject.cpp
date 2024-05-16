@@ -22,6 +22,12 @@ bool GameObject::HasColliders()
 	return hasColliders;
 }
 
+float GameObject::GetDistanceToCamera() const
+{
+	return distanceToCamera;
+}
+
+
 
 GameObject::~GameObject()
 {

@@ -6,6 +6,7 @@
 class CASSOULET_DLL Transform
 {
 public:
+
 	//game object world position
 	Vector3 position = Vector3(0, 0, 0);
 	//game object world scale
@@ -14,6 +15,8 @@ public:
 	Vector3 rotation;
 
 	void Translate(Vector3 translation);
+
+	Vector3 RotateTransform(Vector3 axis, float angle);
 
 	//returns a vector pointing up relative to the position and rotation of the game object
 	Vector3 Up();

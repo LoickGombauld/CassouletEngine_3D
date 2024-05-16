@@ -1,6 +1,6 @@
 
 #include <CassouletEngineLibrarie/Doom/Player.h>
-
+#include <CassouletEngineLibrarie/System/ViewRender.h>
 
 Player::Player(ViewRender* pViewRender, int iID) : m_pViewRender(pViewRender), m_iPlayerID(iID), m_FOV(90), m_iRotationSpeed(8), m_iMoveSpeed(4), m_EyeLevel(41)
 {

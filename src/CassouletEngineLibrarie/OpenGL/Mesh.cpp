@@ -1,6 +1,6 @@
 #include <CassouletEngineLibrarie/OpenGL/Mesh.h>
 #include <CassouletEngineLibrarie/System/GameObject.h>
-#include <CassouletEngineLibrarie/Doom/Angle.h>
+#include <CassouletEngineLibrarie/Doom/DataTypes.h>
 
 // Définition des couleurs des vertices
 static const GLfloat colors[] = {
@@ -20,43 +20,39 @@ Mesh::Mesh()
 
 Mesh::~Mesh()
 {
-	if (indices != nullptr)
-		delete indices;
-	if (vertices != nullptr)
-		delete vertices;
-}
-void Mesh::SetMesh(std::array<GLfloat, 180>& mesh)
-{
-	m_mesh = mesh;
-	hasVertices = true;
+	glDeleteBuffers(1, &vbo);
+	glDeleteBuffers(1, &ebo);
 }
 
-void Mesh::SetVertices(GLfloat* pvertices, int pverticesCount)
+void Mesh::SetMesh(std::vector<GLfloat>& vertices,std::vector<GLubyte>& uv)
 {
-	if (vertices != nullptr)
-		//remove old vertices from memory
-		delete vertices;
-
-
-	// Allouez de la mémoire pour les nouvelles coordonnées UV
-	this->vertices = new GLfloat[pverticesCount];
-
-	// Copiez les coordonnées UV dans le tableau de la classe
-	for (int i = 0; i < pverticesCount; ++i) {
-		this->vertices[i] = pvertices[i];
-	}
-	verticesCount = pverticesCount;
-
-	hasVertices = true;
-
+	SetMesh(vertices.data(), uv.data(),vertices.size(),uv.size());
 }
 
-void Mesh::SetTexture(sf::Texture* ptexture, GLubyte* texture_coord, bool isTransparent)
+
+void Mesh::SetMesh(GLfloat* vertices, GLubyte* uvs, int verticesCount,int uvCount)
 {
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices,GL_STATIC_DRAW);
+
+	glGenBuffers(1, &ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uvs), uvs,GL_STATIC_DRAW);
+
+	m_uvCount = uvCount;
+	m_verticesCount = verticesCount;
+	hasVertices = verticesCount > 0 && uvCount > 0;
+}
+
+
+void Mesh::SetTexture(sf::Texture* ptexture, bool isTransparent)
+{
+	if (m_texture != nullptr)
+		delete m_texture;
 	//set new texture and uvs
-	texture = ptexture;
-	indices = texture_coord;
-	isTransparent = isTransparent;
+	m_texture = ptexture;
+	m_isTransparent = isTransparent;
 }
 
 void Mesh::Draw()
@@ -65,10 +61,10 @@ void Mesh::Draw()
 	if (!hasVertices)
 		return;
 
-	if (texture == nullptr)
+	if (m_texture == nullptr)
 	{
-		texture = new sf::Texture();
-		texture->create(10, 10);
+		m_texture = new sf::Texture();
+		m_texture->create(10, 10);
 	}
 
 	// Apply some transformations
@@ -87,9 +83,6 @@ void Mesh::Draw()
 	//set scale
 	glScalef(gameObject->transform.scale.x, gameObject->transform.scale.y, gameObject->transform.scale.z);
 
-
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
 	//disable cullface if we want to draw both sides, else enable it
 	if (doubleSided)
 		glDisable(GL_CULL_FACE);
@@ -106,137 +99,131 @@ void Mesh::Draw()
 	//glBindTexture(GL_TEXTURE_2D, texture->getNativeHandle());
 		// Enable position and texture coordinates vertex components
 
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,vbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,ebo);
+
+	// Configurer les attributs de sommet
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 5 * sizeof(GLfloat), m_mesh.data());
-	glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(GLfloat), m_mesh.data() + 3);
+	glVertexPointer(3, GL_FLOAT, 0, (GLvoid*)0);
 
-	// Disable normal and color vertex components
-	glDisableClientState(GL_NORMAL_ARRAY);
-	glDisableClientState(GL_COLOR_ARRAY);
+	glDrawElements(GL_TRIANGLES, m_verticesCount, GL_UNSIGNED_BYTE, 0);
+	glDisableClientState(GL_VERTEX_ARRAY);
 
-	glDrawArrays(GL_TRIANGLES, 0, verticesCount);
-}
-
-void Mesh::SetIndices(const GLubyte* indices, int indiceCount)
-{
-	// Assurez-vous que uvCount est valide
-	if (indiceCount <= 0 || indiceCount % 2 != 0) {
-		// Gérer l'erreur ou l'ignorer
-		return;
-	}
-
-	// Libérez la mémoire s'il y a déjà des coordonnées Indices précédentes
-	delete[] this->indices;
-
-	// Allouez de la mémoire pour les nouvelles coordonnées Indices
-	this->indices = new GLubyte[indiceCount];
-
-	// Copiez les coordonnées Indices dans le tableau de la classe
-	for (int i = 0; i < indiceCount; ++i) {
-		this->indices[i] = indices[i];
-	}
-
-	// Mise à jour de uvCount
-	this->indiceCount = indiceCount;
 }
 
 
-Mesh* Mesh::CreateMesh(GLfloat* vertices, GLubyte* indices, int countVertice, int countIndice)
+Mesh* Mesh::CreateMesh(std::vector<GLfloat>& vertices, std::vector<GLubyte>& uvs)
 {
 	Mesh* mesh = new Mesh();
-	mesh->SetVertices(vertices, countVertice);
-	mesh->SetIndices(indices, countIndice);
-
-	return mesh;
-}
-
-Mesh* Mesh::CreateMesh(std::array<GLfloat, 180>& pmesh, int verticeCount)
-{
-	Mesh* mesh = new Mesh();
-	mesh->SetMesh(pmesh);
-	mesh->verticesCount = verticeCount;
-
+	mesh->SetMesh(vertices, uvs);
 	return mesh;
 }
 
 Mesh* Mesh::CreateCube()
 {
-	std::array<GLfloat, 180> cube =
+	std::vector<GLfloat> cube =
 	{
-			-1, -1, -1,  0, 0,
-			-1,  1, -1,  1, 0,
-			-1, -1,  1,  0, 1,
-			-1, -1,  1,  0, 1,
-			-1,  1, -1,  1, 0,
-			-1,  1,  1,  1, 1,
+		//Top
+			   -1, 1, -1, //0
+				1, 1, -1  //1
+			   - 1, 1,  1, //2
+				1, 1,  1, //3
 
-			 1, -1, -1,  0, 0,
-			 1,  1, -1,  1, 0,
-			 1, -1,  1,  0, 1,
-			 1, -1,  1,  0, 1,
-			 1,  1, -1,  1, 0,
-			 1,  1,  1,  1, 1,
+			   //Bottom
+			   -1, -1, -1, //4
+				1, -1, -1, //5
+			   -1, -1,  1, //6
+				1, -1,  1  //7
 
-			-1, -1, -1,  0, 0,
-			 1, -1, -1,  1, 0,
-			-1, -1,  1,  0, 1,
-			-1, -1,  1,  0, 1,
-			 1, -1, -1,  1, 0,
-			 1, -1,  1,  1, 1,
+			   //Front
+			   - 1,  1, 1, //8
+				1,  1, 1, //9
+			   -1, -1, 1, //10
+				1, -1, 1, //11
 
-			-1,  1, -1,  0, 0,
-			 1,  1, -1,  1, 0,
-			-1,  1,  1,  0, 1,
-			-1,  1,  1,  0, 1,
-			 1,  1, -1,  1, 0,
-			 1,  1,  1,  1, 1,
+			   //Back
+			   -1,  1, -1, //12
+				1,  1, -1, //13
+			   -1, -1, -1, //14
+				1, -1, -1, //15
 
-			-1, -1, -1,  0, 0,
-			 1, -1, -1,  1, 0,
-			-1,  1, -1,  0, 1,
-			-1,  1, -1,  0, 1,
-			 1, -1, -1,  1, 0,
-			 1,  1, -1,  1, 1,
+			   //Left
+			   -1,  1,  1, //16
+			   -1,  1, -1, //17
+			   -1, -1,  1, //18
+			   -1, -1, -1, //19
 
-			-1, -1,  1,  0, 0,
-			 1, -1,  1,  1, 0,
-			-1,  1,  1,  0, 1,
-			-1,  1,  1,  0, 1,
-			 1, -1,  1,  1, 0,
-			 1,  1,  1,  1, 1
+			   //Right
+			   1,  1,  1, //20
+			   1,  1, -1, //21
+			   1, -1,  1, //22
+			   1, -1, -1  //23
 	};
 
-	return CreateMesh(cube, 36);
+	std::vector<GLubyte> uv = {
+
+			//Top
+			2, 6, 7,
+			2, 3, 7,
+
+			//Bottom
+			0, 4, 5,
+			0, 1, 5,
+
+			//Left
+			0, 2, 6,
+			0, 4, 6,
+
+			//Right
+			1, 3, 7,
+			1, 5, 7,
+
+			//Front
+			0, 2, 3,
+			0, 1, 3,
+
+			//Back
+			4, 6, 7,
+			4, 5, 7
+	};
+	
+	auto cubemesh =  CreateMesh(cube, uv);
+	cubemesh->doubleSided = true;
+	return cubemesh;
 }
 
 Mesh* Mesh::CreateQuad() {
-	std::array<GLfloat, 180> quad =
+	std::vector<GLfloat> quad =
 	{
-		// positions // texture coordinates
-		-1, -1,  1,  0, 0,
-		 1, -1,  1,  1, 0,
-		-1,  1,  1,  0, 1,
-		-1,  1,  1,  0, 1,
-		 1, -1,  1,  1, 0,
-		 1,  1,  1,  1, 1
+		//Front
+		-1,  1, 1, //8
+		 1,  1, 1, //9
+		-1, -1, 1, //10
+		 1, -1, 1, //11
 
 	};
-	return CreateMesh(quad, 6);
+
+	std::vector<GLubyte> uv = {
+		//Front
+		0, 2, 3,
+		0, 1, 3,
+	};
+	return CreateMesh(quad, uv);
 }
 
 Mesh* Mesh::CreateTriangle() {
 	std::vector<GLfloat> vertices = {
-	-0.5f, -0.5f, 0.0f,
+	-0.f, -0.5f, 0.0f,
 	 0.5f, -0.5f, 0.0f,
 	 0.0f,  0.5f, 0.0f
 	};
 
 	std::vector<GLubyte>  indices = {
-	0, 1, 2
+	0, 0,
+	1, 0,
 	};
 
-	return CreateMesh(vertices.data(), indices.data(), vertices.size(), indices.size());
+	return CreateMesh(vertices, indices);
 }
 
 Mesh* Mesh::CreateSphere(int resolution) {
@@ -284,5 +271,5 @@ Mesh* Mesh::CreateSphere(int resolution) {
 			indices.push_back(t);
 		}
 	}
-	return CreateMesh(vertices.data(), indices.data(), vertices.size(), indices.size());
+	return CreateMesh(vertices, indices);
 }

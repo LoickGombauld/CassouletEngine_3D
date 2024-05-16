@@ -1,10 +1,8 @@
 #pragma once
-#include <CassouletEngineLibrarie/System/Libs.h>
+
 #include <CassouletEngineLibrarie/Doom/DataTypes.h>
-#include <CassouletEngineLibrarie/Doom/Angle.h>
-#include <CassouletEngineLibrarie/Doom/Things.h>
-#include <CassouletEngineLibrarie/Doom/Map.h>
-#include <CassouletEngineLibrarie/System/ViewRender.h>
+
+class ViewRender;
 
 class CASSOULET_DLL Player
 {

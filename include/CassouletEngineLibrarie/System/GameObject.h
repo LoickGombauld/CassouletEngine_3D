@@ -29,6 +29,10 @@ public:
 	//returns true if the game object has a collider on it
 	bool HasColliders();
 
+
+	//returns the distance to the active camera
+	float GetDistanceToCamera() const;
+
 private:
 
 	//true if the game object has a collider

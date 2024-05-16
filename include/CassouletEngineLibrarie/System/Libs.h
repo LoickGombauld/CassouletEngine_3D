@@ -5,6 +5,14 @@
 //EnTT
 #include <entt/entt.hpp>
 
+// ImGui
+#include <imgui.h>
+#include <imgui-SFML.h>
+
+//OpenGl
+#define GLEW_STATIC
+#include <gl/glew.h>
+
 
 // SFML
 #include <SFML/System.hpp>
@@ -12,9 +20,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/OpenGL.hpp>
 
-// ImGui
-#include <imgui.h>
-#include <imgui-SFML.h>
+
 
 //C++ standard headers
 #include <stdarg.h>

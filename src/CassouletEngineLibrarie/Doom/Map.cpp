@@ -5,6 +5,7 @@
 #include <CassouletEngineLibrarie/Doom/Things.h>
 #include <CassouletEngineLibrarie/OpenGL/Mesh.h>
 #include <CassouletEngineLibrarie/Doom/Player.h>
+#include <CassouletEngineLibrarie/OpenGL/Matrix.h>
 
 Map::Map(ViewRender* pViewRender, const std::string& sName, Player* pPlayer, Things* pThings) : m_sName(sName),
 m_XMin(INT_MAX), m_XMax(INT_MIN), m_YMin(INT_MAX), m_YMax(INT_MIN), m_iLumpIndex(-1), m_pPlayer(pPlayer),
@@ -77,7 +78,6 @@ void Map::BuildLinedef()
 {
 	WADLinedef wadlinedef;
 	Linedef linedef;
-	float SCALE = 100;
 	for (int i = 0; i < m_pLinedefs->size(); ++i)
 	{
 		wadlinedef = m_pLinedefs->at(i);
@@ -112,21 +112,39 @@ void Map::BuildLinedef()
 	for (int i = 0; i < m_Linedefs.size(); i++)
 	{
 		GameObject* obj = new GameObject();
-		Mesh* mesh = GameManager::Instance().addComponent<Mesh>(obj->id, Mesh::CreateQuad());
+		Mesh* mesh = GameManager::Instance().addComponent<Mesh>(obj->id,Mesh::CreateQuad());
 		WADLinedef* linedef = &m_pLinedefs->at(i);
-		auto start = m_Vertexes[linedef->StartVertexID];
-		auto end = m_Vertexes[linedef->EndVertexID];
-		start.XPosition /= SCALE;
-		start.YPosition /= SCALE;
-		end.XPosition /= SCALE;
-		end.YPosition /= SCALE;
+		if (linedef->Flags & ELINEDEFFLAGS::eTWOSIDED)
+		{
+			// TODO
+		}
+		else 
+		{
+			auto start = m_Vertexes[linedef->StartVertexID];
+			auto end = m_Vertexes[linedef->EndVertexID];
+			start.XPosition /= MAPBLOCKUNITS;
+			start.YPosition /= MAPBLOCKUNITS;
+			end.XPosition /= MAPBLOCKUNITS;
+			end.YPosition /= MAPBLOCKUNITS;
 
-		float x = start.XPosition - end.XPosition, y = start.YPosition - end.YPosition;
-		float size = sqrtf(x * x + y * y);
+			float x = end.XPosition - start.XPosition, y = end.YPosition - start.YPosition;
+			float size = sqrtf(x * x + y * y);
+			float angle = atan2f(y, x);
 
-		obj->transform.position = Vector3(start.XPosition, 0.f, start.YPosition);
-		obj->transform.scale = Vector3(size, 1.f, 1.f);
-		m_objects.push_back(obj);
+
+			obj->transform.position = Vector3(start.XPosition, 0, start.YPosition);
+			obj->transform.scale = Vector3(size, 1, 1.f);
+			obj->transform.RotateTransform(Vector3( 0.f, 1.f, 0.f ), angle);
+			//Mat4 model = mat4_mul(mat4_mul(scale, rotation), translation);
+			//std::vector<GLfloat,180Ui64 > verticeArray;
+			//for (int i = 0; i < 16; i++)
+			//{
+			//	verticeArray[i] = model.array[i];
+			//}
+
+			//mesh = Mesh::CreateMesh(verticeArray,16);
+			m_objects.push_back(obj);
+		}
 	}
 	delete m_pLinedefs;
 	m_pLinedefs = nullptr;
@@ -272,7 +290,7 @@ void Map::Render3DView()
 }
 
 void Map::Render3DTest() {
-	for  (GameObject* var : m_objects)
+	for (GameObject* var : m_objects)
 	{
 		var->Draw();
 	}

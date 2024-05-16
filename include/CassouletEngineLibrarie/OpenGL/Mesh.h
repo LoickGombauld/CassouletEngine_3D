@@ -1,5 +1,4 @@
 #pragma once
-#include <CassouletEngineLibrarie/System/Libs.h>
 #include <CassouletEngineLibrarie/System/Component.h>
 
 class CASSOULET_DLL Mesh  : public Component
@@ -12,36 +11,34 @@ public:
 
 	Mesh::~Mesh();
 
-	static Mesh* CreateMesh(GLfloat* vertices, GLubyte* indices, int countVertice, int countUV);
-	static Mesh* CreateMesh(std::array<GLfloat,180>& mesh,int countVertice);
+	
+	static Mesh* CreateMesh(std::vector<GLfloat>& vertices, std::vector<GLubyte>& uvs);
 
 	static Mesh* CreateCube();
 	static Mesh* CreateQuad();
 	static Mesh* CreateTriangle();
 	static Mesh* CreateSphere(int subdivisions);
-	void SetIndices(const GLubyte* uv, int uvCount);
-	void SetMesh(std::array<GLfloat, 180>& mesh);
+
+	void SetMesh(std::vector<GLfloat>& vertices, std::vector<GLubyte>& uv);
+
+	void SetMesh(GLfloat* vertices, GLubyte* uvs, int verticesCount, int uvsCount);
 
 	void Draw();
-	void SetVertices(GLfloat* pvertices,int pverticesCount);
-	void SetTexture(sf::Texture* ptexture, GLubyte* texture_coord, bool isTransparent);
+	void SetTexture(sf::Texture* ptexture, bool isTransparent);
 	bool doubleSided;
 
 	const std::string GetName() { return "Mesh"; };
 private:
-	sf::RenderWindow* window;
-	sf::Texture* texture = nullptr;
-	GLubyte* indices = nullptr;
-	int indiceCount = 0;
-	GLfloat* vertices = nullptr;
+	sf::Texture* m_texture = nullptr;
 	//is the texture transparent somewhere
-	bool isTransparent;
+	bool m_isTransparent;
 
 	//mesh vertices
+	int m_uvCount = 0;
 	//amount of vertices
-	int verticesCount;
+	int m_verticesCount;
 	//true of the mesh has vertices
 	bool hasVertices;
 
-	std::array<GLfloat, 180> m_mesh ;
+	GLuint vbo, ebo;
 };

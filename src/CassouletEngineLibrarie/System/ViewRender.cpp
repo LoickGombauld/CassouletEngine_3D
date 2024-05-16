@@ -6,7 +6,6 @@
 #include <CassouletEngineLibrarie/Doom/Map.h>
 #include <CassouletEngineLibrarie/OpenGL/Camera.h>
 #include <CassouletEngineLibrarie/OpenGL/Mesh.h>
-#include <CassouletEngineLibrarie/OpenGL/Matrix.h>
 #include <CassouletEngineLibrarie/System/CassouletEngine.h>
 #include <CassouletEngineLibrarie/Math/Vector2.h>
 
@@ -45,8 +44,6 @@ static const GLfloat colors[] = {
 };
 
 static bool init_shader(std::shared_ptr<sf::Shader>& shader);
-static void init_projection(std::shared_ptr<sf::Shader>& shader, int width, int height);
-void init_projection(int left, int width, int height, int top, int znear, int zfar);
 
 ViewRender::ViewRender()
 {
@@ -100,12 +97,6 @@ void ViewRender::UpdateCameraMovement(float dt) {
 		m_objCam->transform.position += m_objCam->transform.Right() * m_cameraspeed * dt;
 }
 
-void ViewRender::UpdateResize(int width, int height)
-{
-	m_screenWidth = width;
-	m_screenHeight = height;
-	m_cam->SetWindowSize(width, height);
-}
 
 void ViewRender::Clear()
 {
@@ -164,16 +155,10 @@ void ViewRender::Update()
 {
 }
 
-void init_projection(std::shared_ptr<sf::Shader>& shader, int width, int height)
+void ViewRender::UpdateResize(int width, int height)
 {
-	//Mat4 projection = mat4_ortho(0.f, width, height, 0.f, -1.f, 1.f);
-	//shader->setUniform("projection", projection);
-	glOrtho(-100.0f, width, -height, 100.0f, -100.0f, 100.0f);
-}
-
-void init_projection(int left, int width, int height, int top, int znear, int zfar)
-{
-	//Mat4 projection = mat4_ortho(0.f, width, height, 0.f, -1.f, 1.f);
-	//shader->setUniform("projection", projection);
-	glFrustum(left, width, -height, top, -znear, zfar);
+	m_screenWidth = width;
+	m_screenHeight = height;
+	m_cam->SetWindowSize(width, height);
+	glViewport(0, 0, width, height);
 }

@@ -146,6 +146,7 @@ Vector3 Vector3::Rotate(Vector3 axis, float degrees)
 	return (*this) * cos_theta + cross * sin_theta + dot * (1.0f - cos_theta);
 }
 
+
 bool Vector3::operator==(const Vector3 & other) const
 {
 	return x == other.x && y == other.y && z == other.z;

@@ -2,6 +2,7 @@
 #include <CassouletEngineLibrarie/Doom/AssetsManager.h>
 #include <CassouletEngineLibrarie/Doom/Map.h>
 #include <CassouletEngineLibrarie/Doom/Player.h>
+#include <CassouletEngineLibrarie/Doom/Things.h>
 #include <CassouletEngineLibrarie/System/ViewRender.h>
 #include <CassouletEngineLibrarie/Math/Vector2.h>
 #include <CassouletEngineLibrarie/System/GameObject.h>
@@ -15,14 +16,18 @@ CassouletEngine::~CassouletEngine()
 
 bool CassouletEngine::Init()
 {
-	sf::ContextSettings settings;
-	settings.majorVersion = 3;
-	settings.minorVersion = 3;
+	m_window.create(sf::VideoMode(m_iRenderWidth, m_iRenderHeight), m_sAppName, sf::Style::Default);
+	sf::ContextSettings settings = m_window.getSettings();
+	std::cout << "OpenGL version:" << settings.majorVersion << "." << settings.minorVersion << std::endl;
 	settings.depthBits = 24;
 	settings.stencilBits = 8;
 	settings.antialiasingLevel = 4;
+	m_window.setActive(true);
+	if (!glewInit())
+	{
+		return false;
+	}
 
-	m_window.create(sf::VideoMode(m_iRenderWidth, m_iRenderHeight), m_sAppName, sf::Style::Default, settings);
 	m_window.setFramerateLimit(144);
 	m_window.setActive();
 	ImGui::SFML::Init(m_window);

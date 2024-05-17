@@ -2,6 +2,7 @@
 #include <CassouletEngineLibrarie/System/GameObject.h>
 #include <CassouletEngineLibrarie/Doom/DataTypes.h>
 
+
 // Définition des couleurs des vertices
 static const GLfloat colors[] = {
 	1.0f, 0.0f, 0.0f, // Rouge
@@ -24,21 +25,30 @@ Mesh::~Mesh()
 	glDeleteBuffers(1, &ebo);
 }
 
-void Mesh::SetMesh(std::vector<GLfloat>& vertices,std::vector<GLubyte>& uv)
+void Mesh::SetMesh(std::vector<GLfloat>& vertices, std::vector<uint32_t>& uv)
 {
-	SetMesh(vertices.data(), uv.data(),vertices.size(),uv.size());
+	SetMesh(vertices.data(), uv.data(), vertices.size(), uv.size());
 }
 
 
-void Mesh::SetMesh(GLfloat* vertices, GLubyte* uvs, int verticesCount,int uvCount)
+void Mesh::SetMesh(GLfloat* vertices, uint32_t* uvs, int verticesCount, int uvCount)
 {
+
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices,GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * verticesCount, vertices, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
+	glEnableVertexAttribArray(0);
 
 	glGenBuffers(1, &ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uvs), uvs,GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * uvCount, uvs, GL_STATIC_DRAW);
+
 
 	m_uvCount = uvCount;
 	m_verticesCount = verticesCount;
@@ -60,12 +70,6 @@ void Mesh::Draw()
 	//if the mesh does not have any vertices stop here
 	if (!hasVertices)
 		return;
-
-	if (m_texture == nullptr)
-	{
-		m_texture = new sf::Texture();
-		m_texture->create(10, 10);
-	}
 
 	// Apply some transformations
 	glMatrixMode(GL_MODELVIEW);
@@ -97,22 +101,19 @@ void Mesh::Draw()
 
 	//bind texture
 	//glBindTexture(GL_TEXTURE_2D, texture->getNativeHandle());
-		// Enable position and texture coordinates vertex components
+	// Enable position and texture coordinates vertex components
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,vbo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,ebo);
+	
 
 	// Configurer les attributs de sommet
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 0, (GLvoid*)0);
-
-	glDrawElements(GL_TRIANGLES, m_verticesCount, GL_UNSIGNED_BYTE, 0);
-	glDisableClientState(GL_VERTEX_ARRAY);
-
+	glBindVertexArray(vao);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glDrawElements(GL_TRIANGLES, m_uvCount, GL_UNSIGNED_INT, NULL);
+	glBindVertexArray(0);
 }
 
 
-Mesh* Mesh::CreateMesh(std::vector<GLfloat>& vertices, std::vector<GLubyte>& uvs)
+Mesh* Mesh::CreateMesh(std::vector<GLfloat>& vertices, std::vector<uint32_t>& uvs)
 {
 	Mesh* mesh = new Mesh();
 	mesh->SetMesh(vertices, uvs);
@@ -160,34 +161,34 @@ Mesh* Mesh::CreateCube()
 			   1, -1, -1  //23
 	};
 
-	std::vector<GLubyte> uv = {
+	std::vector<uint32_t> uv = {
 
-			//Top
-			2, 6, 7,
-			2, 3, 7,
+		//Top
+		2, 6, 7,
+		2, 3, 7,
 
-			//Bottom
-			0, 4, 5,
-			0, 1, 5,
+		//Bottom
+		0, 4, 5,
+		0, 1, 5,
 
-			//Left
-			0, 2, 6,
-			0, 4, 6,
+		//Left
+		0, 2, 6,
+		0, 4, 6,
 
-			//Right
-			1, 3, 7,
-			1, 5, 7,
+		//Right
+		1, 3, 7,
+		1, 5, 7,
 
-			//Front
-			0, 2, 3,
-			0, 1, 3,
+		//Front
+		0, 2, 3,
+		0, 1, 3,
 
-			//Back
-			4, 6, 7,
-			4, 5, 7
+		//Back
+		4, 6, 7,
+		4, 5, 7
 	};
-	
-	auto cubemesh =  CreateMesh(cube, uv);
+
+	auto cubemesh = CreateMesh(cube, uv);
 	cubemesh->doubleSided = true;
 	return cubemesh;
 }
@@ -203,7 +204,7 @@ Mesh* Mesh::CreateQuad() {
 
 	};
 
-	std::vector<GLubyte> uv = {
+	std::vector<uint32_t> uv = {
 		//Front
 		0, 2, 3,
 		0, 1, 3,
@@ -218,7 +219,7 @@ Mesh* Mesh::CreateTriangle() {
 	 0.0f,  0.5f, 0.0f
 	};
 
-	std::vector<GLubyte>  indices = {
+	std::vector<uint32_t>  indices = {
 	0, 0,
 	1, 0,
 	};
@@ -228,13 +229,13 @@ Mesh* Mesh::CreateTriangle() {
 
 Mesh* Mesh::CreateSphere(int resolution) {
 	std::vector<GLfloat> vertices;
-	std::vector<GLubyte> indices;
+	std::vector<uint32_t> indices;
 
 
 	float x, y, z, xy;
 	float radius = 1.0f;
 	float nx, ny, nz, lengthInv = 1.0f / radius;
-	GLubyte s, t;
+	uint32_t s, t;
 
 	int sectorCount = resolution;
 	int stackCount = resolution;

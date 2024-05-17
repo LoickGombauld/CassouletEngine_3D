@@ -12,16 +12,16 @@ public:
 	Mesh::~Mesh();
 
 	
-	static Mesh* CreateMesh(std::vector<GLfloat>& vertices, std::vector<GLubyte>& uvs);
+	static Mesh* CreateMesh(std::vector<GLfloat>& vertices, std::vector<uint32_t>& uvs);
 
 	static Mesh* CreateCube();
 	static Mesh* CreateQuad();
 	static Mesh* CreateTriangle();
 	static Mesh* CreateSphere(int subdivisions);
 
-	void SetMesh(std::vector<GLfloat>& vertices, std::vector<GLubyte>& uv);
+	void SetMesh(std::vector<GLfloat>& vertices, std::vector<uint32_t>& uv);
 
-	void SetMesh(GLfloat* vertices, GLubyte* uvs, int verticesCount, int uvsCount);
+	void SetMesh(GLfloat* vertices, uint32_t* uvs, int verticesCount, int uvsCount);
 
 	void Draw();
 	void SetTexture(sf::Texture* ptexture, bool isTransparent);
@@ -39,6 +39,6 @@ private:
 	int m_verticesCount;
 	//true of the mesh has vertices
 	bool hasVertices;
-
-	GLuint vbo, ebo;
+	bool first_loop = true;
+	GLuint vao, vbo, ebo;
 };

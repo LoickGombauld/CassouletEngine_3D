@@ -68,7 +68,7 @@ void ViewRender::GLInit(int width, int height)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	//enable depth test by deafult and set depth function
+	//enable depth test by default and set depth function
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 
@@ -100,6 +100,7 @@ void ViewRender::UpdateCameraMovement(float dt) {
 
 void ViewRender::Clear()
 {
+	glFlush();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 

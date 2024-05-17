@@ -13,7 +13,6 @@
 #define GLEW_STATIC
 #include <gl/glew.h>
 
-
 // SFML
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
@@ -54,5 +53,4 @@ using Vec3 = sf::Glsl::Vec3;
 using Vec4 = sf::Glsl::Vec4;
 
 using Mat4 = sf::Glsl::Mat4;
-
 #endif

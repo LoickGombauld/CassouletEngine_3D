@@ -6,6 +6,7 @@
 #include <CassouletEngineLibrarie/System/ViewRender.h>
 #include <CassouletEngineLibrarie/Math/Vector2.h>
 #include <CassouletEngineLibrarie/System/GameObject.h>
+#include <CassouletEngineLibrarie/OpenGL/glDebug.h>
 
 CassouletEngine::CassouletEngine() : m_sAppName("CassouletMood Engine 2 : insérer un citation stylée"), m_bIsOver(false), m_iRenderWidth(1280), m_iRenderHeight(900), m_pMap(nullptr), m_pPlayer(nullptr)
 {
@@ -18,6 +19,8 @@ bool CassouletEngine::Init()
 {
 	sf::ContextSettings settings ;
 	m_window.create(sf::VideoMode(m_iRenderWidth, m_iRenderHeight), m_sAppName, sf::Style::Default,settings);
+	settings.majorVersion = 4;
+	settings.minorVersion = 3;
 	std::cout << "OpenGL version:" << settings.majorVersion << "." << settings.minorVersion << std::endl;
 	settings.depthBits = 24;
 	settings.stencilBits = 8;
@@ -27,6 +30,9 @@ bool CassouletEngine::Init()
 	{
 		return false;
 	}
+	glEnable(GL_DEBUG_OUTPUT);
+	glDebugMessageCallback(glDebugOutput, nullptr);
+	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 	ImGui::SFML::Init(m_window);
 	m_window.setFramerateLimit(144);
 

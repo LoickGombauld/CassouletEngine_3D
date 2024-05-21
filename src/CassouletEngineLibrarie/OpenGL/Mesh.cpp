@@ -2,6 +2,9 @@
 #include <CassouletEngineLibrarie/System/GameObject.h>
 #include <CassouletEngineLibrarie/Doom/DataTypes.h>
 
+#define POSITION 0
+#define COLOR 1
+
 
 // Définition des couleurs des vertices
 static const GLfloat colors[] = {
@@ -21,6 +24,7 @@ Mesh::Mesh()
 
 Mesh::~Mesh()
 {
+	glDeleteVertexArrays(1, &vao);
 	glDeleteBuffers(1, &vbo);
 	glDeleteBuffers(1, &ebo);
 }
@@ -31,28 +35,35 @@ void Mesh::SetMesh(std::vector<GLfloat>& vertices, std::vector<uint32_t>& uv)
 }
 
 
-void Mesh::SetMesh(GLfloat* vertices, uint32_t* uvs, int verticesCount, int uvCount)
+void Mesh::SetMesh(GLfloat* vertices, uint32_t* indices, int verticesCount, int indicesCount)
 {
 
 	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-
-
 	glGenBuffers(1, &vbo);
+	glGenBuffers(1, &ebo);
+
+
+	glBindVertexArray(vao);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * verticesCount, vertices, GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
-	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(POSITION);
+	glVertexAttribPointer(POSITION, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
 
-	glGenBuffers(1, &ebo);
+	glEnableVertexAttribArray(COLOR);
+	glVertexAttribPointer(COLOR, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(vao);
+
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * uvCount, uvs, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * indicesCount, indices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 
-	m_uvCount = uvCount;
+	m_indicesCount = indicesCount;
 	m_verticesCount = verticesCount;
-	hasVertices = verticesCount > 0 && uvCount > 0;
+	hasVertices = verticesCount > 0 && indicesCount > 0;
 }
 
 
@@ -60,7 +71,7 @@ void Mesh::SetTexture(sf::Texture* ptexture, bool isTransparent)
 {
 	if (m_texture != nullptr)
 		delete m_texture;
-	//set new texture and uvs
+	//set new texture
 	m_texture = ptexture;
 	m_isTransparent = isTransparent;
 }
@@ -93,22 +104,13 @@ void Mesh::Draw()
 	else
 		glEnable(GL_CULL_FACE);
 
-	//enable textures and set filter mode to nearest, we want to use nearest to get a clear pixel art style
-	//glEnable(GL_TEXTURE_2D);
-	//sf::Texture::bind(texture);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-	//bind texture
-	//glBindTexture(GL_TEXTURE_2D, texture->getNativeHandle());
-	// Enable position and texture coordinates vertex components
-
-	
-
 	// Configurer les attributs de sommet
 	glBindVertexArray(vao);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glDrawElements(GL_TRIANGLES, m_uvCount, GL_UNSIGNED_INT, NULL);
+
+	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+	
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
 	glBindVertexArray(0);
 }
 
@@ -200,16 +202,15 @@ Mesh* Mesh::CreateQuad() {
 		-1,  1, 1, //8
 		 1,  1, 1, //9
 		-1, -1, 1, //10
-		 1, -1, 1, //11
-
+		 1, -1, 1 //11
 	};
 
-	std::vector<uint32_t> uv = {
+	std::vector<uint32_t> indices = {
 		//Front
-		0, 2, 3,
-		0, 1, 3,
+      0, 1, 3, // 1st triangle
+      1, 2, 3 // 2nd triangle
 	};
-	return CreateMesh(quad, uv);
+	return CreateMesh(quad, indices);
 }
 
 Mesh* Mesh::CreateTriangle() {

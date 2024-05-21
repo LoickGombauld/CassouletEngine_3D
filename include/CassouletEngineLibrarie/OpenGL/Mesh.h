@@ -33,8 +33,8 @@ private:
 	//is the texture transparent somewhere
 	bool m_isTransparent;
 
-	//mesh vertices
-	int m_uvCount = 0;
+	//amount of indices
+	int m_indicesCount = 0;
 	//amount of vertices
 	int m_verticesCount;
 	//true of the mesh has vertices

@@ -123,8 +123,8 @@ void ViewRender::Render(sf::RenderWindow& window)
 {
 	//t->render3D(window);
 	GameManager::Instance().DrawAllGameObjects();
-	//m_objtest->Draw();
-	//m_objtest2->Draw();
+	m_objtest->Draw();
+	m_objtest2->Draw();
 }
 
 static bool init_shader(std::shared_ptr<sf::Shader>& shader)
@@ -138,7 +138,6 @@ static bool init_shader(std::shared_ptr<sf::Shader>& shader)
 	color_location = "color";
 	use_texture_location = "useTexture";
 	texture_index_location = "texIdx";
-
 	if (!shader->loadFromMemory(vertSrc, fragSrc))
 	{
 		return false;
@@ -147,7 +146,7 @@ static bool init_shader(std::shared_ptr<sf::Shader>& shader)
 	{
 		return false;
 	}
-
+	shader->setUniform(projection_location,10);
 	return true;
 }
 

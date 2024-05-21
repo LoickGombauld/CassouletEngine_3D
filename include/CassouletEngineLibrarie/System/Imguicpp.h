@@ -10,7 +10,7 @@ public:
        
 
         ImGui::Begin(title.c_str());
-        ImGui::SetWindowSize(ImVec2(300, 300));
+        ImGui::SetWindowSize(ImVec2(300, 100));
 
         ImGui::InputFloat("X", &x);
         ImGui::InputFloat("Y", &y);
@@ -24,7 +24,7 @@ public:
         
         
         ImGui::Begin(title.c_str());
-        ImGui::SetWindowSize(ImVec2(300, 300));
+        ImGui::SetWindowSize(ImVec2(300, 100));
 
         ImGui::InputInt("X", &x);
         ImGui::InputInt("Y", &y);
@@ -40,7 +40,7 @@ public:
 
     static void DrawVector3Windowf(float& x, float& y, float& z, const std::string& title) {
         ImGui::Begin(title.c_str());
-        ImGui::SetWindowSize(ImVec2(300, 300));
+        ImGui::SetWindowSize(ImVec2(300, 100));
 
         ImGui::InputFloat("X", &x);
         ImGui::InputFloat("Y", &y);
@@ -51,7 +51,7 @@ public:
 
     static void DrawVector3Windowi(int& x, int& y, int& z, const std::string& title) {
         ImGui::Begin(title.c_str());
-        ImGui::SetWindowSize(ImVec2(300, 300));
+        ImGui::SetWindowSize(ImVec2(300, 100));
 
         ImGui::InputInt("X", &x);
         ImGui::InputInt("Y", &y);
@@ -71,7 +71,7 @@ public:
     static void DrawVector2Windowf(float& x, float& y, const std::string& title) {
 
         ImGui::Begin(title.c_str());
-        ImGui::SetWindowSize(ImVec2(300, 300)); 
+        ImGui::SetWindowSize(ImVec2(300, 100)); 
 
         ImGui::InputFloat("X", &x);
         ImGui::InputFloat("Y", &y);
@@ -84,7 +84,7 @@ public:
 
 
         ImGui::Begin(title.c_str());
-        ImGui::SetWindowSize(ImVec2(300, 300));
+        ImGui::SetWindowSize(ImVec2(300, 100));
 
         ImGui::InputInt("X", &x);
         ImGui::InputInt("Y", &y);
@@ -120,7 +120,7 @@ public:
     }
 
     static void DrawVector4Windowf(Vec4& vec) {
-        ImGui::SetWindowSize(ImVec2(300, 300));
+        ImGui::SetWindowSize(ImVec2(300, 100));
         DrawVector4Windowf(vec.x, vec.y, vec.z, vec.w);
     }
 
@@ -142,7 +142,7 @@ public:
     }
 
     static void DrawVector3Windowf(Vec3& vec) {
-        ImGui::SetWindowSize(ImVec2(300, 300));
+        ImGui::SetWindowSize(ImVec2(300, 100));
         DrawVector3Windowf(vec.x, vec.y, vec.z);
     }
 
@@ -160,7 +160,7 @@ public:
     }
 
     static void DrawVector2Windowf(Vec2& vec) {
-        ImGui::SetWindowSize(ImVec2(300, 300));
+        ImGui::SetWindowSize(ImVec2(300, 100));
         DrawVector2Windowf(vec.x, vec.y);
     }
 };

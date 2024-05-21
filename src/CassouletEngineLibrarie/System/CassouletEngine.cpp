@@ -19,7 +19,7 @@ bool CassouletEngine::Init()
 {
 	sf::ContextSettings settings ;
 	m_window.create(sf::VideoMode(m_iRenderWidth, m_iRenderHeight), m_sAppName, sf::Style::Default,settings);
-	settings.majorVersion = 4;
+	settings.majorVersion = 3;
 	settings.minorVersion = 3;
 	std::cout << "OpenGL version:" << settings.majorVersion << "." << settings.minorVersion << std::endl;
 	settings.depthBits = 24;

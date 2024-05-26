@@ -24,45 +24,46 @@ Mesh::Mesh()
 
 Mesh::~Mesh()
 {
-	glDeleteVertexArrays(1, &vao);
-	glDeleteBuffers(1, &vbo);
-	glDeleteBuffers(1, &ebo);
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
+	glDeleteBuffers(1, &IBO);
 }
 
-void Mesh::SetMesh(std::vector<GLfloat>& vertices, std::vector<uint32_t>& uv)
+void Mesh::SetMesh(std::vector<GLfloat>& vertices, std::vector<GLuint>& uv)
 {
 	SetMesh(vertices.data(), uv.data(), vertices.size(), uv.size());
 }
 
-
-void Mesh::SetMesh(GLfloat* vertices, uint32_t* indices, int verticesCount, int indicesCount)
+void Mesh::SetMesh(GLfloat* vertices, GLuint* indices, int verticesCount, int indicesCount)
 {
+	this->m_vertices = vertices;
+	this->m_indices = indices;
+	this->m_verticesCount = verticesCount;
+	this->m_indicesCount = indicesCount;
 
-	glGenVertexArrays(1, &vao);
-	glGenBuffers(1, &vbo);
-	glGenBuffers(1, &ebo);
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &IBO);
 
+	/* VAOs contain ARRAY_BUFFERS */
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * verticesCount, vertices,
+		GL_STATIC_DRAW);
 
-	glBindVertexArray(vao);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * verticesCount, vertices, GL_STATIC_DRAW);
-
-	glEnableVertexAttribArray(POSITION);
 	glVertexAttribPointer(POSITION, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
+	glEnableVertexAttribArray(POSITION);
 
+	glVertexAttribPointer(COLOR, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(2 * sizeof(float)));
 	glEnableVertexAttribArray(COLOR);
-	glVertexAttribPointer(COLOR, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(vao);
+	glBindVertexArray(VAO);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * indicesCount, indices, GL_STATIC_DRAW);
+	/* ELEMENT_ARRAY_BUFFERS are not contained in VAOs */
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLfloat) * indicesCount, indices, GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-
-	m_indicesCount = indicesCount;
-	m_verticesCount = verticesCount;
 	hasVertices = verticesCount > 0 && indicesCount > 0;
 }
 
@@ -105,20 +106,20 @@ void Mesh::Draw()
 		glEnable(GL_CULL_FACE);
 
 	// Configurer les attributs de sommet
-	glBindVertexArray(vao);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
 
 	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
-	
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 }
 
 
-Mesh* Mesh::CreateMesh(std::vector<GLfloat>& vertices, std::vector<uint32_t>& uvs)
+Mesh* Mesh::CreateMesh(std::vector<GLfloat>& vertices, std::vector<GLuint>& indices)
 {
 	Mesh* mesh = new Mesh();
-	mesh->SetMesh(vertices, uvs);
+	mesh->SetMesh(vertices, indices);
 	return mesh;
 }
 
@@ -163,7 +164,7 @@ Mesh* Mesh::CreateCube()
 			   1, -1, -1  //23
 	};
 
-	std::vector<uint32_t> uv = {
+	std::vector<GLuint> uv = {
 
 		//Top
 		2, 6, 7,
@@ -196,47 +197,43 @@ Mesh* Mesh::CreateCube()
 }
 
 Mesh* Mesh::CreateQuad() {
-	std::vector<GLfloat> quad =
-	{
-		//Front
-		-1,  1, 1, //8
-		 1,  1, 1, //9
-		-1, -1, 1, //10
-		 1, -1, 1 //11
+
+	GLfloat vertices[] = {
+	 0.5f, 0.5f, 0.f,// top-right
+	0.5f, -0.5f, 0.f, // bottom-right
+	-0.5f, -0.5f, 0.f, // bottom-left
+	-0.5f, 0.5f, 0.f // top-left 
 	};
 
-	std::vector<uint32_t> indices = {
-		//Front
-      0, 1, 3, // 1st triangle
-      1, 2, 3 // 2nd triangle
+	GLuint indices[] = { 
+	  0, 1, 3, // 1st triangle
+	  1, 2, 3,// 2nd triangle
 	};
-	return CreateMesh(quad, indices);
+
+	Mesh* mesh = new Mesh();
+	mesh->SetMesh(vertices, indices, 12, 6);
+	return mesh;
 }
 
 Mesh* Mesh::CreateTriangle() {
-	std::vector<GLfloat> vertices = {
-	-0.f, -0.5f, 0.0f,
-	 0.5f, -0.5f, 0.0f,
-	 0.0f,  0.5f, 0.0f
-	};
-
-	std::vector<uint32_t>  indices = {
-	0, 0,
-	1, 0,
-	};
-
-	return CreateMesh(vertices, indices);
+	GLfloat vertices[] = { 0.0f, 0.5f, 1.0f, 0.0f, 0.0f,
+			 0.5f,-0.5f, 0.0f, 1.0f, 0.0f,
+			-0.5f,-0.5f, 0.0f, 0.0f, 1.0f };
+	GLuint elements[] = { 0, 1, 2 };
+	Mesh* mesh = new Mesh();
+	mesh->SetMesh(vertices, elements, 15,3);
+	return mesh;
 }
 
 Mesh* Mesh::CreateSphere(int resolution) {
 	std::vector<GLfloat> vertices;
-	std::vector<uint32_t> indices;
+	std::vector<GLuint> indices;
 
 
 	float x, y, z, xy;
 	float radius = 1.0f;
 	float nx, ny, nz, lengthInv = 1.0f / radius;
-	uint32_t s, t;
+	GLuint s, t;
 
 	int sectorCount = resolution;
 	int stackCount = resolution;

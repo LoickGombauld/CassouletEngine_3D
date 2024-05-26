@@ -7,6 +7,7 @@ class Player;
 class ViewRender;
 class Map;
 class Vector2;
+class FreeCamera;
 
 class CASSOULET_DLL CassouletEngine
 {
@@ -17,6 +18,7 @@ public:
     virtual void Render();
     virtual void KeyReleasedMouseInput();
     virtual void MouseMovedInput();
+    FreeCamera* GetCam();
     virtual void UpdateKeyStatus();
     virtual void KeyPressed();
     virtual void KeyReleased();

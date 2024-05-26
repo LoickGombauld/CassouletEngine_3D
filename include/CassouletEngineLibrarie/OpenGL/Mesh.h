@@ -12,33 +12,35 @@ public:
 	Mesh::~Mesh();
 
 	
-	static Mesh* CreateMesh(std::vector<GLfloat>& vertices, std::vector<uint32_t>& uvs);
+	static Mesh* CreateMesh(std::vector<GLfloat>& vertices, std::vector<GLuint>& uvs);
 
 	static Mesh* CreateCube();
 	static Mesh* CreateQuad();
 	static Mesh* CreateTriangle();
 	static Mesh* CreateSphere(int subdivisions);
 
-	void SetMesh(std::vector<GLfloat>& vertices, std::vector<uint32_t>& uv);
+	void SetMesh(std::vector<GLfloat>& vertices, std::vector<GLuint>& uv);
 
-	void SetMesh(GLfloat* vertices, uint32_t* uvs, int verticesCount, int uvsCount);
+	void SetMesh(GLfloat* vertices, GLuint* indices, int verticesCount, int indicesCount);
 
 	void Draw();
 	void SetTexture(sf::Texture* ptexture, bool isTransparent);
 	bool doubleSided;
 
 	const std::string GetName() { return "Mesh"; };
+	GLuint VAO, VBO, IBO;
+	//amount of indices
+	int m_indicesCount = 0;
+	//amount of vertices
+	int m_verticesCount;
 private:
 	sf::Texture* m_texture = nullptr;
 	//is the texture transparent somewhere
 	bool m_isTransparent;
 
-	//amount of indices
-	int m_indicesCount = 0;
-	//amount of vertices
-	int m_verticesCount;
 	//true of the mesh has vertices
 	bool hasVertices;
 	bool first_loop = true;
-	GLuint vao, vbo, ebo;
+	GLuint* m_indices;
+	GLfloat* m_vertices;
 };

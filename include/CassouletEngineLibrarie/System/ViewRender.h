@@ -5,6 +5,7 @@ class Map;
 class Test;
 class Mesh;
 class GameObject;
+class FreeCamera;
 class Camera;
 class Vector2;
 
@@ -16,11 +17,14 @@ public:
 	void GLInit(int width, int height);
 	void UpdateCameraMovement(float dt);
 	void Clear();
-
+	void Setview(Mat4& view);
+	void SetProjection(Mat4& projection);
 	void Update();
 	void UpdateResize(int width, int height);
 	void Render(sf::RenderWindow& window);
 	void UIRender();
+	void RenderMesh(const Mesh* mesh, Mat4& transformation, Vec4& color);
+	FreeCamera* f_Cam;
 	GameObject* m_objCam;
 	float m_cameraSensitivity = 100.f;
 
@@ -38,5 +42,4 @@ private:
 	Mesh* m_mesh;
 	Mesh* m_mesh2;
 	Test* t;
-	std::shared_ptr<sf::Shader>	m_shader;
 };

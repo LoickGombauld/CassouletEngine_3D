@@ -8,16 +8,12 @@ void Camera::Draw()
 	//	return;
 
 
-	////set viewport perspective
+	//set viewport perspective
 	// Setup a perspective projection
-
 	//glMatrixMode(GL_PROJECTION_MATRIX);
-	glMatrixMode(GL_PROJECTION);
 	const GLfloat ratio = static_cast<float>(m_sizeX) / static_cast<float>(m_sizeY);
 	glFrustum(-ratio, ratio, -1.f, 1.f, 1.f, 500.f);
 	//glMatrixMode(GL_MODELVIEW_MATRIX);
-	glMatrixMode(GL_MODELVIEW);
-
 	//clear and set background color
 	glClearColor(backgroundColor.r,backgroundColor.g,backgroundColor.b,backgroundColor.a);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

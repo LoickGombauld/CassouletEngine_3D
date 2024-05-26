@@ -1,12 +1,13 @@
 #include <CassouletEngineLibrarie/System/CassouletEngine.h>
+#include <CassouletEngineLibrarie/System/ViewRender.h>
 #include <CassouletEngineLibrarie/Doom/AssetsManager.h>
 #include <CassouletEngineLibrarie/Doom/Map.h>
 #include <CassouletEngineLibrarie/Doom/Player.h>
 #include <CassouletEngineLibrarie/Doom/Things.h>
-#include <CassouletEngineLibrarie/System/ViewRender.h>
 #include <CassouletEngineLibrarie/Math/Vector2.h>
 #include <CassouletEngineLibrarie/System/GameObject.h>
 #include <CassouletEngineLibrarie/OpenGL/glDebug.h>
+#include <CassouletEngineLibrarie/OpenGL/FreeCamera.h>
 
 CassouletEngine::CassouletEngine() : m_sAppName("CassouletMood Engine 2 : insérer un citation stylée"), m_bIsOver(false), m_iRenderWidth(1280), m_iRenderHeight(900), m_pMap(nullptr), m_pPlayer(nullptr)
 {
@@ -19,9 +20,9 @@ bool CassouletEngine::Init()
 {
 	sf::ContextSettings settings ;
 	m_window.create(sf::VideoMode(m_iRenderWidth, m_iRenderHeight), m_sAppName, sf::Style::Default,settings);
-	settings.majorVersion = 3;
-	settings.minorVersion = 3;
-	std::cout << "OpenGL version:" << settings.majorVersion << "." << settings.minorVersion << std::endl;
+	settings.majorVersion = 4;
+	settings.minorVersion = 6;
+	std::cout << "OpenGL version: " << settings.majorVersion << "." << settings.minorVersion << std::endl;
 	settings.depthBits = 24;
 	settings.stencilBits = 8;
 	settings.antialiasingLevel = 4;
@@ -94,6 +95,8 @@ void CassouletEngine::MouseMovedInput() {
 	}
 }
 
+FreeCamera* CassouletEngine::GetCam() {return m_pViewRender->f_Cam; };
+
 void CassouletEngine::KeyPressed()
 {
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
@@ -134,6 +137,7 @@ void CassouletEngine::UpdateKeyStatus()
 	{
 		m_pPlayer->Sink();
 	}
+
 }
 
 

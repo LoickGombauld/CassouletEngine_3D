@@ -5,7 +5,6 @@
 #include <CassouletEngineLibrarie/Doom/Things.h>
 #include <CassouletEngineLibrarie/OpenGL/Mesh.h>
 #include <CassouletEngineLibrarie/Doom/Player.h>
-#include <CassouletEngineLibrarie/OpenGL/Matrix.h>
 
 Map::Map(ViewRender* pViewRender, const std::string& sName, Player* pPlayer, Things* pThings) : m_sName(sName),
 m_XMin(INT_MAX), m_XMax(INT_MIN), m_YMin(INT_MAX), m_YMax(INT_MIN), m_iLumpIndex(-1), m_pPlayer(pPlayer),

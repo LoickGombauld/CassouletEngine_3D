@@ -1,5 +1,6 @@
 #include <CassouletEngineLibrarie/System/Game.h>
 #include <CassouletEngineLibrarie/System/CassouletEngine.h>
+#include <CassouletEngineLibrarie/OpenGL/FreeCamera.h>
 
 Game::Game() 
 {
@@ -37,8 +38,12 @@ void Game::ProcessInput()
             m_pCassouletEngine->KeyPressed();
             break;
         case sf::Event::MouseMoved:
-            m_pCassouletEngine->MouseMovedInput();
-
+           m_pCassouletEngine->GetCam()->ProcessMouseMovement(event.mouseMove.x, event.mouseMove.y);
+            break;
+            
+        case sf::Event::MouseWheelScrolled:
+            m_pCassouletEngine->GetCam()->ProcessMouseScroll(event.mouseWheelScroll.delta);
+            break;
         case sf::Event::KeyReleased:
             m_pCassouletEngine->KeyReleased();
             break;

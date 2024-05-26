@@ -1,7 +1,7 @@
 #pragma once
 #include <CassouletEngineLibrarie/System/Libs.h>
 
-#define PI 3.14159265358979f
+
 class CASSOULET_DLL Angle
 {
 public:

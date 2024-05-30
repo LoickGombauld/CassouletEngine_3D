@@ -2,6 +2,7 @@
 #include <CassouletEngineLibrarie/System/GameObject.h>
 #include <CassouletEngineLibrarie/Doom/DataTypes.h>
 
+
 #define POSITION 0
 #define COLOR 1
 
@@ -18,15 +19,18 @@ static const GLfloat colors[] = {
 	1.0f, 1.0f, 0.0f  // Jaune
 };
 
-Mesh::Mesh()
-{
+Mesh::Mesh() : VAO(0), VBO(0), EBO(0), m_texture(nullptr), m_isTransparent(false), m_indicesCount(0) {
+
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &EBO);
 }
 
 Mesh::~Mesh()
 {
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
-	glDeleteBuffers(1, &IBO);
+	glDeleteBuffers(1, &EBO);
 }
 
 void Mesh::SetMesh(std::vector<GLfloat>& vertices, std::vector<GLuint>& uv)
@@ -41,29 +45,22 @@ void Mesh::SetMesh(GLfloat* vertices, GLuint* indices, int verticesCount, int in
 	this->m_verticesCount = verticesCount;
 	this->m_indicesCount = indicesCount;
 
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &IBO);
-
-	/* VAOs contain ARRAY_BUFFERS */
 	glBindVertexArray(VAO);
+
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * verticesCount, vertices,
-		GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, verticesCount * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
 
-	glVertexAttribPointer(POSITION, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
-	glEnableVertexAttribArray(POSITION);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesCount * sizeof(GLuint), indices, GL_STATIC_DRAW);
 
-	glVertexAttribPointer(COLOR, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(2 * sizeof(float)));
-	glEnableVertexAttribArray(COLOR);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(1);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(VAO);
-
-	/* ELEMENT_ARRAY_BUFFERS are not contained in VAOs */
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLfloat) * indicesCount, indices, GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 	hasVertices = verticesCount > 0 && indicesCount > 0;
 }
 
@@ -79,25 +76,30 @@ void Mesh::SetTexture(sf::Texture* ptexture, bool isTransparent)
 
 void Mesh::Draw()
 {
+	//if texutre is load then bind
+	if (m_texture) {
+		sf::Texture::bind(m_texture);
+	}
+
 	//if the mesh does not have any vertices stop here
 	if (!hasVertices)
 		return;
 
-	// Apply some transformations
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+	//// Apply some transformations
+	//glMatrixMode(GL_MODELVIEW);
+	//glLoadIdentity();
 
 
-	//set position
-	glTranslatef(gameObject->transform.position.x, gameObject->transform.position.y, -gameObject->transform.position.z);
+	////set position
+	//glTranslatef(gameObject->transform.position.x, gameObject->transform.position.y, -gameObject->transform.position.z);
 
-	//set rotation
-	glRotatef(gameObject->transform.rotation.x, 1, 0, 0);
-	glRotatef(gameObject->transform.rotation.y, 0, 1, 0);
-	glRotatef(gameObject->transform.rotation.z, 0, 0, 1);
+	////set rotation
+	//glRotatef(gameObject->transform.rotation.x, 1, 0, 0);
+	//glRotatef(gameObject->transform.rotation.y, 0, 1, 0);
+	//glRotatef(gameObject->transform.rotation.z, 0, 0, 1);
 
-	//set scale
-	glScalef(gameObject->transform.scale.x, gameObject->transform.scale.y, gameObject->transform.scale.z);
+	////set scale
+	//glScalef(gameObject->transform.scale.x, gameObject->transform.scale.y, gameObject->transform.scale.z);
 
 	//disable cullface if we want to draw both sides, else enable it
 	if (doubleSided)
@@ -105,14 +107,19 @@ void Mesh::Draw()
 	else
 		glEnable(GL_CULL_FACE);
 
+	if (m_isTransparent) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
+	else {
+		glDisable(GL_BLEND);
+	}
+
 	// Configurer les attributs de sommet
 	glBindVertexArray(VAO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-
-	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glDrawElements(GL_TRIANGLES, m_indicesCount, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
+
 }
 
 
@@ -122,97 +129,54 @@ Mesh* Mesh::CreateMesh(std::vector<GLfloat>& vertices, std::vector<GLuint>& indi
 	mesh->SetMesh(vertices, indices);
 	return mesh;
 }
+Mesh* Mesh::CreateCube() {
+	Mesh* cube = new Mesh();
 
-Mesh* Mesh::CreateCube()
-{
-	std::vector<GLfloat> cube =
-	{
-		//Top
-			   -1, 1, -1, //0
-				1, 1, -1  //1
-			   - 1, 1,  1, //2
-				1, 1,  1, //3
-
-			   //Bottom
-			   -1, -1, -1, //4
-				1, -1, -1, //5
-			   -1, -1,  1, //6
-				1, -1,  1  //7
-
-			   //Front
-			   - 1,  1, 1, //8
-				1,  1, 1, //9
-			   -1, -1, 1, //10
-				1, -1, 1, //11
-
-			   //Back
-			   -1,  1, -1, //12
-				1,  1, -1, //13
-			   -1, -1, -1, //14
-				1, -1, -1, //15
-
-			   //Left
-			   -1,  1,  1, //16
-			   -1,  1, -1, //17
-			   -1, -1,  1, //18
-			   -1, -1, -1, //19
-
-			   //Right
-			   1,  1,  1, //20
-			   1,  1, -1, //21
-			   1, -1,  1, //22
-			   1, -1, -1  //23
+	GLfloat vertices[] = {
+		// Positions       // Texture Coords
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f
 	};
 
-	std::vector<GLuint> uv = {
-
-		//Top
-		2, 6, 7,
-		2, 3, 7,
-
-		//Bottom
-		0, 4, 5,
-		0, 1, 5,
-
-		//Left
-		0, 2, 6,
-		0, 4, 6,
-
-		//Right
-		1, 3, 7,
-		1, 5, 7,
-
-		//Front
-		0, 2, 3,
-		0, 1, 3,
-
-		//Back
-		4, 6, 7,
-		4, 5, 7
+	GLuint indices[] = {
+		0, 1, 3,  1, 2, 3,  // Front face
+		4, 5, 7,  5, 6, 7,  // Back face
+		0, 1, 5,  0, 4, 5,  // Bottom face
+		2, 3, 7,  2, 6, 7,  // Top face
+		0, 3, 7,  0, 4, 7,  // Left face
+		1, 2, 6,  1, 5, 6   // Right face
 	};
 
-	auto cubemesh = CreateMesh(cube, uv);
-	cubemesh->doubleSided = true;
-	return cubemesh;
+	cube->SetMesh(vertices, indices, sizeof(vertices) / sizeof(GLfloat), sizeof(indices) / sizeof(GLuint));
+
+	return cube;
 }
 
 Mesh* Mesh::CreateQuad() {
+	Mesh* quad = new Mesh();
 
 	GLfloat vertices[] = {
-	 0.5f, 0.5f, 0.f,// top-right
-	0.5f, -0.5f, 0.f, // bottom-right
-	-0.5f, -0.5f, 0.f, // bottom-left
-	-0.5f, 0.5f, 0.f // top-left 
+		// Positions       // Texture Coords
+		0.5f,  0.5f, 0.0f,  1.0f, 1.0f,
+		0.5f, -0.5f, 0.0f,  1.0f, 0.0f,
+	   -0.5f, -0.5f, 0.0f,  0.0f, 0.0f,
+	   -0.5f,  0.5f, 0.0f,  0.0f, 1.0f
 	};
 
-	GLuint indices[] = { 
-	  0, 1, 3, // 1st triangle
-	  1, 2, 3,// 2nd triangle
+	GLuint indices[] = {
+		0, 1, 3,
+		1, 2, 3
 	};
 
-	Mesh* mesh = new Mesh();
-	mesh->SetMesh(vertices, indices, 12, 6);
-	return mesh;
+	quad->SetMesh(vertices, indices, sizeof(vertices) / sizeof(GLfloat), sizeof(indices) / sizeof(GLuint));
+
+	return quad;
 }
 
 Mesh* Mesh::CreateTriangle() {
@@ -221,7 +185,7 @@ Mesh* Mesh::CreateTriangle() {
 			-0.5f,-0.5f, 0.0f, 0.0f, 1.0f };
 	GLuint elements[] = { 0, 1, 2 };
 	Mesh* mesh = new Mesh();
-	mesh->SetMesh(vertices, elements, 15,3);
+	mesh->SetMesh(vertices, elements, 15, 3);
 	return mesh;
 }
 

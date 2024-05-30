@@ -38,11 +38,12 @@ void Game::ProcessInput()
             m_pCassouletEngine->KeyPressed();
             break;
         case sf::Event::MouseMoved:
-           m_pCassouletEngine->GetCam()->ProcessMouseMovement(event.mouseMove.x, event.mouseMove.y);
+          // m_pCassouletEngine->GetCam()->ProcessMouseMovement(event.mouseMove.x, event.mouseMove.y);
+            m_pCassouletEngine->MouseMovedInput();
             break;
             
         case sf::Event::MouseWheelScrolled:
-            m_pCassouletEngine->GetCam()->ProcessMouseScroll(event.mouseWheelScroll.delta);
+            //m_pCassouletEngine->GetCam()->ProcessMouseScroll(event.mouseWheelScroll.delta);
             break;
         case sf::Event::KeyReleased:
             m_pCassouletEngine->KeyReleased();

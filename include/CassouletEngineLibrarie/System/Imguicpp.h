@@ -64,6 +64,10 @@ public:
         DrawVector3Windowf(vec.x, vec.y, vec.z, title);
     }
 
+    static void DrawVector3Windowf(glm::vec3& vec, const std::string& title) {
+        DrawVector3Windowf(vec.x, vec.y, vec.z, title);
+    }
+
     static void DrawVector3Windowf(Vector3& vec, const std::string& title);
     
     static void DrawVector2Windowf(Vector2& vec, const std::string& title);
@@ -94,6 +98,10 @@ public:
 
     static void DrawVector2Windowf(Vec2& vec, const std::string& title) {
         DrawVector2Windowf(vec.x, vec.y, title);
+    }  
+
+    static void DrawVector2Windowf(glm::vec2& vec, const std::string& title) {
+        DrawVector2Windowf(vec.x, vec.y, title);
     }
 
 public:
@@ -122,6 +130,11 @@ public:
     static void DrawVector4Windowf(Vec4& vec) {
         ImGui::SetWindowSize(ImVec2(300, 100));
         DrawVector4Windowf(vec.x, vec.y, vec.z, vec.w);
+    }  
+
+    static void DrawVector4Windowf(glm::vec4& vec) {
+        ImGui::SetWindowSize(ImVec2(300, 100));
+        DrawVector4Windowf(vec.x, vec.y, vec.z, vec.w);
     }
 
     static void DrawVector3Windowf(float& x, float& y, float& z) {
@@ -146,6 +159,11 @@ public:
         DrawVector3Windowf(vec.x, vec.y, vec.z);
     }
 
+    static void DrawVector3Windowf(glm::vec3& vec) {
+        ImGui::SetWindowSize(ImVec2(300, 100));
+        DrawVector3Windowf(vec.x, vec.y, vec.z);
+    }
+
     static void DrawVector2Windowf(float& x, float& y) {
 
         ImGui::InputFloat("X", &x);
@@ -160,6 +178,12 @@ public:
     }
 
     static void DrawVector2Windowf(Vec2& vec) {
+        ImGui::SetWindowSize(ImVec2(300, 100));
+        DrawVector2Windowf(vec.x, vec.y);
+    }
+
+
+    static void DrawVector2Windowf(glm::vec2& vec) {
         ImGui::SetWindowSize(ImVec2(300, 100));
         DrawVector2Windowf(vec.x, vec.y);
     }

@@ -1,7 +1,7 @@
 #pragma once
 #include <CassouletEngineLibrarie/System/Component.h>
 
-class CASSOULET_DLL Mesh  : public Component
+class CASSOULET_DLL Mesh : public Component
 {
 public:
 	// mesh data
@@ -28,7 +28,7 @@ public:
 	bool doubleSided;
 
 	const std::string GetName() { return "Mesh"; };
-	GLuint VAO, VBO, IBO;
+	GLuint VAO, VBO, EBO;
 	//amount of indices
 	int m_indicesCount = 0;
 	//amount of vertices

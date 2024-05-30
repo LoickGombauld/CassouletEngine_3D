@@ -1,46 +1,38 @@
 #pragma once
 #include<CassouletEngineLibrarie/System/Libs.h>
 
+class Mesh;
+
 class CASSOULET_DLL FreeCamera
 {
 public:
-    enum Movement {
-        FORWARD,
-        BACKWARD,
-        LEFT,
-        RIGHT,
-        UP,
-        DOWN
-    };
 
-    FreeCamera(Vec3 position, Vec3 up, float yaw, float pitch);
+    void SetPosition(const glm::vec3& position);
+    void SetTarget(const glm::vec3& target);
+    void SetUp(const glm::vec3& up);
+    void SetProjection(float fov, float aspectRatio, float nearPlane, float farPlane);
+    glm::vec3 GetPosition();
+    glm::vec3 GetTarget();
+    glm::vec3 GetUp();
+    void Draw(Mesh& mesh, GLuint shaderProgram);
+    void InitCamera(int width,int height);
+    void Rotate(float angle, const glm::vec3& axis);
+    void RotateAroundTarget(float angle, const glm::vec3& axis);
 
-    Mat4 GetViewMatrix() const;
-    void ProcessKeyboard(Movement direction, float deltaTime);
-    void ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch = true);
-    void ProcessMouseScroll(float yoffset);
+    void MoveForward(float distance);
+    void MoveBackward(float distance);
+    void MoveLeft(float distance);
+    void MoveRight(float distance);
 
-    void SetPosition(const Vec3& position);
-    void SetYaw(float yaw);
-    void SetPitch(float pitch);
-
-    const Vec3& GetPosition() const { return m_position; }
-    float GetYaw() const { return m_yaw; }
-    float GetPitch() const { return m_pitch; }
+    void SetProjectionSize(int width, int height);
+    glm::mat4 GetViewMatrix() const;
+    glm::mat4 GetProjectionMatrix() const;
 
 private:
-    void updateCameraVectors();
+    sf::Color backgroundColor = sf::Color::Cyan;
+    glm::vec3 m_position;
+    glm::vec3 m_target;
+    glm::vec3 m_up;
+    glm::mat4 m_projection;
 
-    Vec3 m_position;
-    Vec3 m_front;
-    Vec3 m_up;
-    Vec3 m_right;
-    Vec3 m_worldUp;
-
-    float m_yaw;
-    float m_pitch;
-
-    float m_movementSpeed;
-    float m_mouseSensitivity;
-    float m_zoom;
 };

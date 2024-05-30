@@ -9,6 +9,8 @@
 #include <CassouletEngineLibrarie/OpenGL/glDebug.h>
 #include <CassouletEngineLibrarie/OpenGL/FreeCamera.h>
 
+
+
 CassouletEngine::CassouletEngine() : m_sAppName("CassouletMood Engine 2 : insérer un citation stylée"), m_bIsOver(false), m_iRenderWidth(1280), m_iRenderHeight(900), m_pMap(nullptr), m_pPlayer(nullptr)
 {
 }
@@ -31,9 +33,9 @@ bool CassouletEngine::Init()
 	{
 		return false;
 	}
-	glEnable(GL_DEBUG_OUTPUT);
-	glDebugMessageCallback(glDebugOutput, nullptr);
-	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+	//glEnable(GL_DEBUG_OUTPUT);
+	//glDebugMessageCallback(glDebugOutput, nullptr);
+	//glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 	ImGui::SFML::Init(m_window);
 	m_window.setFramerateLimit(144);
 
@@ -164,15 +166,15 @@ void CassouletEngine::ProcessMouseMovement(float xPos, float yPos) {
 	xOffset *= m_pViewRender->m_cameraSensitivity;
 	yOffset *= m_pViewRender->m_cameraSensitivity;
 
-	m_pViewRender->m_objCam->transform.rotation.y += xOffset * m_dt.asSeconds();
-	m_pViewRender->m_objCam->transform.rotation.x -= yOffset * m_dt.asSeconds();
+	//m_pViewRender->m_objCam->transform.rotation.y += xOffset * m_dt.asSeconds();
+	//m_pViewRender->m_objCam->transform.rotation.x -= yOffset * m_dt.asSeconds();
 
 
-	// Limiter l'angle de tangage entre -89° et 89° pour éviter les erreurs de calcul
-	if (m_pViewRender->m_objCam->transform.rotation.x > 89.0f)
-		m_pViewRender->m_objCam->transform.rotation.x = 89.0f;
-	if (m_pViewRender->m_objCam->transform.rotation.x < -89.0f)
-		m_pViewRender->m_objCam->transform.rotation.x = -89.0f;
+	//// Limiter l'angle de tangage entre -89° et 89° pour éviter les erreurs de calcul
+	//if (m_pViewRender->m_objCam->transform.rotation.x > 89.0f)
+	//	m_pViewRender->m_objCam->transform.rotation.x = 89.0f;
+	//if (m_pViewRender->m_objCam->transform.rotation.x < -89.0f)
+	//	m_pViewRender->m_objCam->transform.rotation.x = -89.0f;
 }
 
 

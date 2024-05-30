@@ -1,86 +1,109 @@
 #include <CassouletEngineLibrarie/OpenGL/FreeCamera.h>
-#include <CassouletEngineLibrarie/OpenGL/Matrix.h>
+#include <CassouletEngineLibrarie/OpenGL/Mesh.h>
 
-FreeCamera::FreeCamera(Vec3 position, Vec3 up, float yaw, float pitch)
-    : m_position(position), m_worldUp(up), m_yaw(yaw), m_pitch(pitch),
-      m_movementSpeed(SPEED), m_mouseSensitivity(SENSITIVITY), m_zoom(ZOOM) {
-    updateCameraVectors();
+
+void FreeCamera::SetPosition(const glm::vec3& position) {
+    this->m_position = position;
 }
 
-Mat4 FreeCamera::GetViewMatrix() const {
-    return Mat4(calcLookAtMatrix(
-       Vec3(m_position.x, m_position.y, m_position.z),
-       Vec3(m_position.x + m_front.x, m_position.y + m_front.y, m_position.z + m_front.z), Vec3(m_up.x, m_up.y, m_up.z)));
+
+void FreeCamera::SetTarget(const glm::vec3& target) {
+    this->m_target = target;
 }
 
-void FreeCamera::ProcessKeyboard(Movement direction, float deltaTime) {
-    float velocity = m_movementSpeed * deltaTime;
-    if (direction == FORWARD)
-        m_position += m_front * velocity;
-    if (direction == BACKWARD)
-        m_position -= m_front * velocity;
-    if (direction == LEFT)
-        m_position -= m_right * velocity;
-    if (direction == RIGHT)
-        m_position += m_right * velocity;
-    if (direction == UP)
-        m_position += m_up * velocity;
-    if (direction == DOWN)
-        m_position -= m_up * velocity;
+void FreeCamera::SetUp(const glm::vec3& up) {
+    this->m_up = up;
 }
 
-void FreeCamera::ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch) {
-    xoffset *= m_mouseSensitivity;
-    yoffset *= m_mouseSensitivity;
-
-    m_yaw += xoffset;
-    m_pitch += yoffset;
-
-    if (constrainPitch) {
-        if (m_pitch > 89.0f)
-            m_pitch = 89.0f;
-        if (m_pitch < -89.0f)
-            m_pitch = -89.0f;
-    }
-
-    updateCameraVectors();
+void FreeCamera::InitCamera(int width, int height){
+    m_position = glm::vec3(0.0f, 0.0f, 3.0f);
+    m_target = glm::vec3(0.0f, 0.0f, 0.0f);
+    m_up = glm::vec3(0.0f, 1.0f, 0.0f);
+    SetProjectionSize(width ,height);
 }
 
-void FreeCamera::ProcessMouseScroll(float yoffset) {
-    if (m_zoom >= 1.0f && m_zoom <= 45.0f)
-        m_zoom -= yoffset;
-    if (m_zoom <= 1.0f)
-        m_zoom = 1.0f;
-    if (m_zoom >= 45.0f)
-        m_zoom = 45.0f;
+void FreeCamera::SetProjectionSize(int width, int height) {
+    SetProjection(45.0f, width / static_cast<float>(height), 0.1f, 100.0f);
 }
 
-void FreeCamera::SetPosition(const Vec3& position) {
-    m_position = position;
-    updateCameraVectors();
+
+void FreeCamera::SetProjection(float fov, float aspectRatio, float nearPlane, float farPlane) {
+   m_projection = glm::perspective(glm::radians(fov), aspectRatio, nearPlane, farPlane);
 }
 
-void FreeCamera::SetYaw(float yaw) {
-    m_yaw = yaw;
-    updateCameraVectors();
+glm::vec3 FreeCamera::GetPosition()
+{
+    return m_target;
 }
 
-void FreeCamera::SetPitch(float pitch) {
-    m_pitch = pitch;
-    if (m_pitch > 89.0f)
-        m_pitch = 89.0f;
-    if (m_pitch < -89.0f)
-        m_pitch = -89.0f;
-    updateCameraVectors();
+glm::vec3 FreeCamera::GetTarget()
+{
+    return m_target;
 }
 
-void FreeCamera::updateCameraVectors() {
-    Vec3 front;
-    front.x = cos(Deg2Rad(m_yaw)) * cos(Deg2Rad(m_pitch));
-    front.y = sin(Deg2Rad(m_pitch));
-    front.z = sin(Deg2Rad(m_yaw)) * cos(Deg2Rad(m_pitch));
-    m_front = Vec3_normalize(front);
+glm::vec3 FreeCamera::GetUp()
+{
+    return m_up;
+}
 
-    m_right = Vec3_normalize(Vec3_cross(m_front, m_worldUp));
-    m_up = Vec3_normalize(Vec3_cross(m_right, m_front));
+void FreeCamera::Rotate(float angle, const glm::vec3& axis) {
+    glm::vec3 direction = m_target - m_position;
+    direction = glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis) * glm::vec4(direction, 0.0f);
+    m_target = m_position + direction;
+}
+
+void FreeCamera::RotateAroundTarget(float angle, const glm::vec3& axis) {
+    glm::vec3 direction = m_position - m_target;
+    direction = glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis) * glm::vec4(direction, 0.0f);
+    m_position = m_target + direction;
+}
+
+void FreeCamera::MoveForward(float distance) {
+    glm::vec3 direction = glm::normalize(m_target - m_position);
+   m_position += direction * distance;
+   m_target += direction * distance;
+}
+
+void FreeCamera::MoveBackward(float distance) {
+    glm::vec3 direction = glm::normalize(m_target - m_position);
+    m_position -= direction * distance;
+    m_target -= direction * distance;
+}
+
+void FreeCamera::MoveLeft(float distance) {
+    glm::vec3 direction = glm::normalize(m_target - m_position);
+    glm::vec3 left = glm::normalize(glm::cross(m_up, direction));
+    m_position -= left * distance;
+    m_target -= left * distance;
+}
+
+void FreeCamera::MoveRight(float distance) {
+    glm::vec3 direction = glm::normalize(m_target - m_position);
+    glm::vec3 right = glm::normalize(glm::cross(direction, m_up));
+    m_position += right * distance;
+    m_target += right * distance;
+}
+
+void FreeCamera::Draw(Mesh& mesh,GLuint shaderProgram) {
+    glClearColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);	
+    glm::mat4 view = GetViewMatrix();
+    glm::mat4 projection = GetProjectionMatrix();
+
+   glUseProgram(shaderProgram);
+
+    GLint viewLoc = glGetUniformLocation(shaderProgram, "view");
+    GLint projLoc = glGetUniformLocation(shaderProgram, "projection");
+
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+    mesh.Draw();
+}
+
+glm::mat4 FreeCamera::GetViewMatrix() const {
+   return glm::lookAt(m_position, m_target, m_up);
+}
+
+glm::mat4 FreeCamera::GetProjectionMatrix() const {
+    return m_projection;
 }

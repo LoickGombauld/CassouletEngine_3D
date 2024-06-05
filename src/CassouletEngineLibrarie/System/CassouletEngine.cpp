@@ -33,9 +33,9 @@ bool CassouletEngine::Init()
 	{
 		return false;
 	}
-	//glEnable(GL_DEBUG_OUTPUT);
-	//glDebugMessageCallback(glDebugOutput, nullptr);
-	//glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+	glEnable(GL_DEBUG_OUTPUT);
+	glDebugMessageCallback(glDebugOutput, nullptr);
+	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 	ImGui::SFML::Init(m_window);
 	m_window.setFramerateLimit(144);
 
@@ -93,11 +93,11 @@ void CassouletEngine::KeyReleasedMouseInput()
 void CassouletEngine::MouseMovedInput() {
 	if (sf::Mouse::isButtonPressed(sf::Mouse::Right))
 	{
-		ProcessMouseMovement(sf::Mouse::getPosition().x, sf::Mouse::getPosition().y);
+		ProcessMouseMovement();
 	}
 }
 
-FreeCamera* CassouletEngine::GetCam() {return m_pViewRender->f_Cam; };
+std::shared_ptr<FreeCamera> CassouletEngine::GetCam() {return m_pViewRender->f_Cam; };
 
 void CassouletEngine::KeyPressed()
 {
@@ -151,30 +151,8 @@ void CassouletEngine::KeyReleased()
 	}
 }
 
-void CassouletEngine::ProcessMouseMovement(float xPos, float yPos) {
-	if (m_firstMouse) {
-		m_lastX = xPos;
-		m_lastY = yPos;
-		m_firstMouse = false;
-	}
-
-	float xOffset = xPos - m_lastX;
-	float yOffset = m_lastY - yPos; // Inverse car l'origine de l'écran est en haut à gauche
-	m_lastX = xPos;
-	m_lastY = yPos;
-
-	xOffset *= m_pViewRender->m_cameraSensitivity;
-	yOffset *= m_pViewRender->m_cameraSensitivity;
-
-	//m_pViewRender->m_objCam->transform.rotation.y += xOffset * m_dt.asSeconds();
-	//m_pViewRender->m_objCam->transform.rotation.x -= yOffset * m_dt.asSeconds();
-
-
-	//// Limiter l'angle de tangage entre -89° et 89° pour éviter les erreurs de calcul
-	//if (m_pViewRender->m_objCam->transform.rotation.x > 89.0f)
-	//	m_pViewRender->m_objCam->transform.rotation.x = 89.0f;
-	//if (m_pViewRender->m_objCam->transform.rotation.x < -89.0f)
-	//	m_pViewRender->m_objCam->transform.rotation.x = -89.0f;
+void CassouletEngine::ProcessMouseMovement() {
+	m_pViewRender->UpdateCameraRotation();
 }
 
 

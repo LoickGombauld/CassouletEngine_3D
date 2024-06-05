@@ -1,9 +1,14 @@
 #include <CassouletEngineLibrarie/OpenGL/FreeCamera.h>
 #include <CassouletEngineLibrarie/OpenGL/Mesh.h>
+#include <CassouletEngineLibrarie/System/Imguicpp.h>
 
 
 void FreeCamera::SetPosition(const glm::vec3& position) {
     this->m_position = position;
+}
+
+void FreeCamera::SetRotation(const glm::vec3& rotation) {
+    this->m_rotation = rotation;
 }
 
 
@@ -15,10 +20,19 @@ void FreeCamera::SetUp(const glm::vec3& up) {
     this->m_up = up;
 }
 
+
+void FreeCamera::RotateAroundTarget(float angle, const glm::vec3& axis) {
+    glm::vec3 direction = m_position - m_target;
+    direction = glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis) * glm::vec4(direction, 0.0f);
+   m_position = m_target + direction;
+}
+
 void FreeCamera::InitCamera(int width, int height){
     m_position = glm::vec3(0.0f, 0.0f, 3.0f);
     m_target = glm::vec3(0.0f, 0.0f, 0.0f);
     m_up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+    m_rotation = glm::vec3(0,-90,0);
     SetProjectionSize(width ,height);
 }
 
@@ -33,7 +47,12 @@ void FreeCamera::SetProjection(float fov, float aspectRatio, float nearPlane, fl
 
 glm::vec3 FreeCamera::GetPosition()
 {
-    return m_target;
+    return m_position;
+}
+
+glm::vec3 FreeCamera::GetRotation() const
+{
+    return m_rotation;
 }
 
 glm::vec3 FreeCamera::GetTarget()
@@ -46,59 +65,71 @@ glm::vec3 FreeCamera::GetUp()
     return m_up;
 }
 
+
 void FreeCamera::Rotate(float angle, const glm::vec3& axis) {
-    glm::vec3 direction = m_target - m_position;
-    direction = glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis) * glm::vec4(direction, 0.0f);
-    m_target = m_position + direction;
+    if (axis == glm::vec3(1.0f, 0.0f, 0.0f)) {
+        m_rotation.x += angle;
+    }
+    else if (axis == glm::vec3(0.0f, 1.0f, 0.0f)) {
+        m_rotation.y += angle;
+    }
+    else if (axis == glm::vec3(0.0f, 0.0f, 1.0f)) {
+        m_rotation.z += angle;
+    }
 }
 
-void FreeCamera::RotateAroundTarget(float angle, const glm::vec3& axis) {
-    glm::vec3 direction = m_position - m_target;
-    direction = glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis) * glm::vec4(direction, 0.0f);
-    m_position = m_target + direction;
-}
-
-void FreeCamera::MoveForward(float distance) {
+void FreeCamera::MoveForward(float delta) {
     glm::vec3 direction = glm::normalize(m_target - m_position);
-   m_position += direction * distance;
-   m_target += direction * distance;
+   m_position += direction * delta * m_speed;
+   m_target += direction * delta * m_speed;
 }
 
-void FreeCamera::MoveBackward(float distance) {
+void FreeCamera::MoveBackward(float delta) {
     glm::vec3 direction = glm::normalize(m_target - m_position);
-    m_position -= direction * distance;
-    m_target -= direction * distance;
+    m_position -= direction * delta * m_speed;
+    m_target -= direction * delta * m_speed;
 }
 
-void FreeCamera::MoveLeft(float distance) {
+void FreeCamera::MoveLeft(float delta) {
     glm::vec3 direction = glm::normalize(m_target - m_position);
     glm::vec3 left = glm::normalize(glm::cross(m_up, direction));
-    m_position -= left * distance;
-    m_target -= left * distance;
+    m_position -= left * delta * m_speed;
+    m_target -= left * delta * m_speed;
 }
 
-void FreeCamera::MoveRight(float distance) {
+void FreeCamera::MoveRight(float delta) {
     glm::vec3 direction = glm::normalize(m_target - m_position);
     glm::vec3 right = glm::normalize(glm::cross(direction, m_up));
-    m_position += right * distance;
-    m_target += right * distance;
+    m_position += right * delta * m_speed;
+    m_target += right * delta * m_speed;
 }
 
-void FreeCamera::Draw(Mesh& mesh,GLuint shaderProgram) {
+void FreeCamera::SetShaderUniforms(GLuint shaderProgram) {
+
+    IMGUICPP::DrawVector3Windowf(m_position, "f_Cam Postion");
+    IMGUICPP::DrawVector3Windowf(m_rotation, "f_Cam Rotation");
+    ImGui::Begin("f_Cam Speed");
+    ImGui::DragFloat("speed", &m_speed);
+    ImGui::End();
+    glm::vec3 direction;
+    direction.x = cos(glm::radians(m_rotation.y)) * cos(glm::radians(m_rotation.x));
+    direction.y = sin(glm::radians(m_rotation.x));
+    direction.z = sin(glm::radians(m_rotation.y)) * cos(glm::radians(m_rotation.x));
+    direction = glm::normalize(direction);
+    m_target = m_position + direction;
+    glm::vec3 right = glm::normalize(glm::cross(direction, m_up));
+    m_up = glm::normalize(glm::cross(right, direction));
     glClearColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);	
     glm::mat4 view = GetViewMatrix();
     glm::mat4 projection = GetProjectionMatrix();
 
    glUseProgram(shaderProgram);
 
-    GLint viewLoc = glGetUniformLocation(shaderProgram, "view");
-    GLint projLoc = glGetUniformLocation(shaderProgram, "projection");
-
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
-    mesh.Draw();
+   glUseProgram(shaderProgram);
+   glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
+   glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 }
+
 
 glm::mat4 FreeCamera::GetViewMatrix() const {
    return glm::lookAt(m_position, m_target, m_up);

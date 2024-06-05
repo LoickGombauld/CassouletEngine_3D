@@ -13,23 +13,23 @@ class CASSOULET_DLL ViewRender {
 
 public:
 	ViewRender();
+	~ViewRender();
 
 	void GLInit(int width, int height);
 	void UpdateCameraMovement(float dt);
+	void UpdateCameraRotation();
 	void Clear();
 	void Update();
 	void UpdateResize(int width, int height);
 	void Render(sf::RenderWindow& window);
 	void UIRender();
-	void RenderMesh(const Mesh* mesh, Mat4& transformation, Vec4& color);
 
-	FreeCamera* f_Cam;
+	std::shared_ptr<FreeCamera> f_Cam;
 
 	float m_cameraSensitivity = 100.f;
 
-	GLuint m_shaderProgram;
+    GLuint m_shaderProgram;
 private:
-	float m_cameraspeed = 50.f;
 	Map* m_map;
 	int m_screenWidth;
 	int m_screenHeight;

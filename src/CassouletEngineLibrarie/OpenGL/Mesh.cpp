@@ -1,11 +1,7 @@
 #include <CassouletEngineLibrarie/OpenGL/Mesh.h>
 #include <CassouletEngineLibrarie/System/GameObject.h>
 #include <CassouletEngineLibrarie/Doom/DataTypes.h>
-
-
-#define POSITION 0
-#define COLOR 1
-
+#include <CassouletEngineLibrarie/OpenGL/FreeCamera.h>
 
 // Définition des couleurs des vertices
 static const GLfloat colors[] = {
@@ -19,7 +15,7 @@ static const GLfloat colors[] = {
 	1.0f, 1.0f, 0.0f  // Jaune
 };
 
-Mesh::Mesh() : VAO(0), VBO(0), EBO(0), m_texture(nullptr), m_isTransparent(false), m_indicesCount(0) {
+Mesh::Mesh() : VAO(0), VBO(0), EBO(0), m_texture(nullptr), m_isTransparent(false) {
 
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -33,35 +29,37 @@ Mesh::~Mesh()
 	glDeleteBuffers(1, &EBO);
 }
 
-void Mesh::SetMesh(std::vector<GLfloat>& vertices, std::vector<GLuint>& uv)
-{
-	SetMesh(vertices.data(), uv.data(), vertices.size(), uv.size());
-}
-
-void Mesh::SetMesh(GLfloat* vertices, GLuint* indices, int verticesCount, int indicesCount)
+void Mesh::SetMesh(std::vector<MeshVertex>& vertices, std::vector<GLuint>& indices)
 {
 	this->m_vertices = vertices;
 	this->m_indices = indices;
-	this->m_verticesCount = verticesCount;
-	this->m_indicesCount = indicesCount;
 
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, verticesCount * sizeof(GLfloat), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, m_vertices.size() * sizeof(MeshVertex), &m_vertices[0], GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesCount * sizeof(GLuint), indices, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(unsigned int),
+		&m_indices[0], GL_STATIC_DRAW);
+	// vertex positions
 	glEnableVertexAttribArray(0);
-
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)0);
+	// vertex normals
 	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, Normal));
+	// vertex texture coords
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, TexCoords));
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
-	hasVertices = verticesCount > 0 && indicesCount > 0;
+
+	hasVertices = m_vertices.size() > 0 && indices.size() > 0;
+}
+
+void Mesh::SetCam(FreeCamera* pcam)
+{
+	m_cam = pcam;
 }
 
 
@@ -85,23 +83,19 @@ void Mesh::Draw()
 	if (!hasVertices)
 		return;
 
-	//// Apply some transformations
-	//glMatrixMode(GL_MODELVIEW);
-	//glLoadIdentity();
+	if (m_cam != nullptr)
+	{
+		// Configure les matrices de transformation
+		glm::mat4 model = glm::mat4(1.0f); // Vous pouvez également ajouter des transformations spécifiques à l'objet ici
+		glUseProgram(shaderID);
+		glUniformMatrix4fv(glGetUniformLocation(shaderID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
-
-	////set position
-	//glTranslatef(gameObject->transform.position.x, gameObject->transform.position.y, -gameObject->transform.position.z);
-
-	////set rotation
-	//glRotatef(gameObject->transform.rotation.x, 1, 0, 0);
-	//glRotatef(gameObject->transform.rotation.y, 0, 1, 0);
-	//glRotatef(gameObject->transform.rotation.z, 0, 0, 1);
-
-	////set scale
-	//glScalef(gameObject->transform.scale.x, gameObject->transform.scale.y, gameObject->transform.scale.z);
+		// Utilisez les matrices view et projection de la caméra
+		m_cam->SetShaderUniforms(shaderID);
+	}
 
 	//disable cullface if we want to draw both sides, else enable it
+
 	if (doubleSided)
 		glDisable(GL_CULL_FACE);
 	else
@@ -117,122 +111,135 @@ void Mesh::Draw()
 
 	// Configurer les attributs de sommet
 	glBindVertexArray(VAO);
-	glDrawElements(GL_TRIANGLES, m_indicesCount, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 
 }
 
-
-Mesh* Mesh::CreateMesh(std::vector<GLfloat>& vertices, std::vector<GLuint>& indices)
-{
-	Mesh* mesh = new Mesh();
-	mesh->SetMesh(vertices, indices);
-	return mesh;
-}
 Mesh* Mesh::CreateCube() {
 	Mesh* cube = new Mesh();
 
-	GLfloat vertices[] = {
-		// Positions       // Texture Coords
-		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f
+	std::vector<MeshVertex> vertices = {
+		// Positions          // Normals           // Texture Coords
+		{{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}},
+		{{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 0.0f}},
+		{{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f}},
+		{{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 1.0f}},
+		{{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {0.0f, 0.0f}},
+		{{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {1.0f, 0.0f}},
+		{{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {1.0f, 1.0f}},
+		{{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {0.0f, 1.0f}},
 	};
 
-	GLuint indices[] = {
-		0, 1, 3,  1, 2, 3,  // Front face
-		4, 5, 7,  5, 6, 7,  // Back face
-		0, 1, 5,  0, 4, 5,  // Bottom face
-		2, 3, 7,  2, 6, 7,  // Top face
-		0, 3, 7,  0, 4, 7,  // Left face
-		1, 2, 6,  1, 5, 6   // Right face
+	std::vector<GLuint> indices = {
+		0, 1, 3, 1, 2, 3,   // Front face
+		4, 5, 7, 5, 6, 7,   // Back face
+		0, 1, 5, 0, 4, 5,   // Bottom face
+		2, 3, 7, 2, 6, 7,   // Top face
+		0, 3, 7, 0, 4, 7,   // Left face
+		1, 2, 6, 1, 5, 6    // Right face
 	};
 
-	cube->SetMesh(vertices, indices, sizeof(vertices) / sizeof(GLfloat), sizeof(indices) / sizeof(GLuint));
-
+	cube->SetMesh(vertices, indices);
 	return cube;
 }
 
 Mesh* Mesh::CreateQuad() {
 	Mesh* quad = new Mesh();
 
-	GLfloat vertices[] = {
-		// Positions       // Texture Coords
-		0.5f,  0.5f, 0.0f,  1.0f, 1.0f,
-		0.5f, -0.5f, 0.0f,  1.0f, 0.0f,
-	   -0.5f, -0.5f, 0.0f,  0.0f, 0.0f,
-	   -0.5f,  0.5f, 0.0f,  0.0f, 1.0f
+	std::vector<MeshVertex> vertices = {
+		// Positions          // Normals           // Texture Coords
+		{{-0.5f, -0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+		{{ 0.5f, -0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
+		{{ 0.5f,  0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+		{{-0.5f,  0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
 	};
 
-	GLuint indices[] = {
-		0, 1, 3,
-		1, 2, 3
+	std::vector<GLuint> indices = {
+		0, 1, 2,  // First Triangle
+		0, 2, 3   // Second Triangle
 	};
 
-	quad->SetMesh(vertices, indices, sizeof(vertices) / sizeof(GLfloat), sizeof(indices) / sizeof(GLuint));
-
+	quad->SetMesh(vertices, indices);
 	return quad;
 }
 
 Mesh* Mesh::CreateTriangle() {
-	GLfloat vertices[] = { 0.0f, 0.5f, 1.0f, 0.0f, 0.0f,
-			 0.5f,-0.5f, 0.0f, 1.0f, 0.0f,
-			-0.5f,-0.5f, 0.0f, 0.0f, 1.0f };
-	GLuint elements[] = { 0, 1, 2 };
-	Mesh* mesh = new Mesh();
-	mesh->SetMesh(vertices, elements, 15, 3);
-	return mesh;
+	Mesh* triangle = new Mesh();
+
+	std::vector<MeshVertex> vertices = {
+		// Positions          // Normals           // Texture Coords
+		{{-0.5f, -0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+		{{ 0.5f, -0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
+		{{ 0.0f,  0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}, {0.5f, 1.0f}},
+	};
+
+	std::vector<GLuint> indices = {
+		0, 1, 2  // Single Triangle
+	};
+
+	triangle->SetMesh(vertices, indices);
+	return triangle;
 }
 
-Mesh* Mesh::CreateSphere(int resolution) {
-	std::vector<GLfloat> vertices;
+Mesh* Mesh::CreateSphere(float radius, unsigned int sectorCount , unsigned int stackCount)
+{
+
+	Mesh* sphere = new Mesh();
+
+	std::vector<MeshVertex> vertices;
 	std::vector<GLuint> indices;
 
-
-	float x, y, z, xy;
-	float radius = 1.0f;
-	float nx, ny, nz, lengthInv = 1.0f / radius;
-	GLuint s, t;
-
-	int sectorCount = resolution;
-	int stackCount = resolution;
+	float x, y, z, xy;  // vertex position
+	float nx, ny, nz, lengthInv = 1.0f / radius;  // normal
+	float s, t;  // texture coordinate
 
 	float sectorStep = 2 * PI / sectorCount;
 	float stackStep = PI / stackCount;
 	float sectorAngle, stackAngle;
-	for (int i = 0; i <= stackCount; ++i)
-	{
-		stackAngle = PI / 2 - i * stackStep;
-		xy = radius * cosf(stackAngle);
-		z = radius * sinf(stackAngle);
 
-		for (int j = 0; j <= sectorCount; ++j)
-		{
-			sectorAngle = j * sectorStep;
+	// Generate vertices
+	for (unsigned int i = 0; i <= stackCount; ++i) {
+		stackAngle = PI / 2 - i * stackStep;  // starting from pi/2 to -pi/2
+		xy = radius * cosf(stackAngle);  // r * cos(u)
+		z = radius * sinf(stackAngle);  // r * sin(u)
 
-			x = xy * cosf(sectorAngle);
-			y = xy * sinf(sectorAngle);
-			vertices.push_back(x);
-			vertices.push_back(y);
-			vertices.push_back(z);
+		// Add (sectorCount+1) vertices per stack
+		for (unsigned int j = 0; j <= sectorCount; ++j) {
+			sectorAngle = j * sectorStep;  // starting from 0 to 2pi
 
-			nx = x * lengthInv;
-			ny = y * lengthInv;
-			nz = z * lengthInv;
-			indices.push_back(nx);
-			indices.push_back(ny);
-			indices.push_back(nz);
-
-			s = j / sectorCount;
-			t = i / stackCount;
-			indices.push_back(s);
-			indices.push_back(t);
+			// Vertex position (x, y, z)
+			x = xy * cosf(sectorAngle);  // r * cos(u) * cos(v)
+			y = xy * sinf(sectorAngle);  // r * cos(u) * sin(v)
+			vertices.push_back({
+				glm::vec3(x, y, z),
+				glm::vec3(x * lengthInv, y * lengthInv, z * lengthInv),
+				glm::vec2((float)j / sectorCount, (float)i / stackCount)
+				});
 		}
 	}
-	return CreateMesh(vertices, indices);
+
+	// Generate indices
+	for (unsigned int i = 0; i < stackCount; ++i) {
+		unsigned int k1 = i * (sectorCount + 1);  // beginning of current stack
+		unsigned int k2 = k1 + sectorCount + 1;  // beginning of next stack
+
+		for (unsigned int j = 0; j < sectorCount; ++j, ++k1, ++k2) {
+			// 2 triangles per sector excluding first and last stacks
+			if (i != 0) {
+				indices.push_back(k1);
+				indices.push_back(k2);
+				indices.push_back(k1 + 1);
+			}
+
+			if (i != (stackCount - 1)) {
+				indices.push_back(k1 + 1);
+				indices.push_back(k2);
+				indices.push_back(k2 + 1);
+			}
+		}
+	}
+
+	sphere->SetMesh(vertices, indices);
+	return sphere;
 }

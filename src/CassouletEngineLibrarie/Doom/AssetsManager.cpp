@@ -23,6 +23,7 @@ void AssetsManager::Init(WADLoader* pWADLoader)
 
 AssetsManager::~AssetsManager()
 {
+    delete(m_pWADLoader);
 }
 
 //Patch* AssetsManager::AddPatch(const std::string& sPatchName, WADPatchHeader& PatchHeader)

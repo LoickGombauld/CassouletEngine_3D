@@ -18,7 +18,7 @@ public:
     virtual void Render();
     virtual void KeyReleasedMouseInput();
     virtual void MouseMovedInput();
-    FreeCamera* GetCam();
+   std::shared_ptr<FreeCamera> GetCam();
     virtual void UpdateKeyStatus();
     virtual void KeyPressed();
     virtual void KeyReleased();
@@ -39,7 +39,7 @@ public:
 protected:
     void LoadWAD();
     void ReadDataFromWAD();
-    void ProcessMouseMovement(float xPos, float yPos);
+    void ProcessMouseMovement();
     Vector2 MouseMoveDir() const;
 
 

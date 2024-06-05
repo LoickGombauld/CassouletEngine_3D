@@ -9,29 +9,52 @@
 #include <CassouletEngineLibrarie/System/CassouletEngine.h>
 #include <CassouletEngineLibrarie/Math/Vector2.h>
 
-const char* vertSrc =
-"#version 330 core\n"
-"layout(location = 0) in vec3 position;\n"
-"layout(location = 1) in vec2 texCoord;\n"
-"out vec2 TexCoord; \n"
+const char* vertSrc = R"(
+#version 330 core
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aNormal;
+layout (location = 2) in vec2 aTexCoords;
+layout (location = 3) in vec3 aColor;
 
-"uniform mat4 model; \n"
-"uniform mat4 view; \n"
-"uniform mat4 projection; \n"
+out vec3 FragPos;
+out vec3 Normal;
+out vec2 TexCoords;
+out vec3 Color;
 
-"void main() {\n"
-"gl_Position = projection * view * model * vec4(position, 1.0);"
-"TexCoord = texCoord;"
-" }\n";
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
 
-const char* fragSrc =
-"#version 330 core\n"
-"in vec2 TexCoord; \n"
-"out vec4 color; \n"
-"uniform sampler2D ourTexture; \n"
-"void main() {\n"
-"color = texture(ourTexture, TexCoord); \n"
-"}\n";
+void main()
+{
+    FragPos = vec3(model * vec4(aPos, 1.0));
+    Normal = mat3(transpose(inverse(model))) * aNormal;
+    TexCoords = aTexCoords;
+    Color = aColor;
+    
+    gl_Position = projection * view * vec4(FragPos, 1.0);
+}
+)";
+
+const char* fragSrc = R"(
+#version 330 core
+out vec4 FragColor;
+
+in vec3 FragPos;
+in vec3 Normal;
+in vec2 TexCoords;
+in vec3 Color;
+
+uniform sampler2D texture1;
+
+void main()
+{
+    vec3 ambient = 0.1 * texture(texture1, TexCoords).rgb;
+    vec3 diffuse = max(dot(Normal, vec3(0.0, 0.0, 1.0)), 0.0) * texture(texture1, TexCoords).rgb;
+    vec3 result = (ambient + diffuse) * Color;
+    FragColor = vec4(result, 1.0);
+}
+)";
 
 static const GLfloat colors[] = {
 	1.0f, 0.0f, 0.0f, // Rouge
@@ -57,6 +80,7 @@ static GLuint LoadShader(const char* shaderSrc, GLenum shaderType) {
 		char infoLog[512];
 		glGetShaderInfoLog(shader, 512, NULL, infoLog);
 		throw std::runtime_error("Shader compilation failed: " + std::string(infoLog));
+		return 0;
 	}
 
 	return shader;
@@ -87,14 +111,25 @@ static GLuint CreateShaderProgram(const char* vertexSrc, const char* fragmentSrc
 
 ViewRender::ViewRender() : f_Cam(new FreeCamera())
 {
-
 	m_shaderProgram = CreateShaderProgram(vertSrc,fragSrc);
 	m_objtest = new GameObject();
 	m_objtest2 = new GameObject();
-	m_mesh = GameManager::Instance().addComponent<Mesh>(m_objtest->id, Mesh::CreateQuad());
+	m_mesh = GameManager::Instance().addComponent<Mesh>(m_objtest->id, Mesh::CreateCube());
 	m_mesh2 = GameManager::Instance().addComponent<Mesh>(m_objtest2->id, Mesh::CreateCube());
+	m_mesh->shaderID = m_shaderProgram;
+	m_mesh->SetCam(f_Cam.get());
 	m_objtest2->transform.position = Vector3(25, 0, 0);
 	t = new Test();
+}
+
+ViewRender::~ViewRender(){
+	glDeleteProgram(m_shaderProgram);
+	delete(m_objtest);
+	delete(m_objtest2);
+	delete(m_mesh);
+	delete(m_mesh2);
+	delete(t);
+	f_Cam.reset();
 }
 
 void ViewRender::GLInit(int width, int height)
@@ -110,36 +145,46 @@ void ViewRender::GLInit(int width, int height)
 
 void ViewRender::UpdateCameraMovement(float dt) {
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
-		f_Cam->RotateAroundTarget(-1.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		f_Cam->Rotate(1.0f, glm::vec3(0.0f, 1.0f, 0.0f));
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
-		f_Cam->RotateAroundTarget(1.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		f_Cam->Rotate(-1.0f, glm::vec3(0.0f, 1.0f, 0.0f));
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
-		f_Cam->RotateAroundTarget(-1.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+		f_Cam->Rotate(1.0f, glm::vec3(1.0f, 0.0f, 0.0f));
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
-		f_Cam->RotateAroundTarget(1.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+		f_Cam->Rotate(-1.0f, glm::vec3(1.0f, 0.0f, 0.0f));
 	}
+
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z)) {
-		f_Cam->MoveForward(0.1f);
+		f_Cam->MoveForward(dt);
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-		f_Cam->MoveBackward(0.1f);
+		f_Cam->MoveBackward(dt);
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q)) {
-		f_Cam->MoveLeft(0.1f);
+		f_Cam->MoveLeft(-dt);
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-		f_Cam->MoveRight(0.1f);
+		f_Cam->MoveRight(dt);
 	}
 }
 
-void  ViewRender::RenderMesh(const Mesh* mesh, Mat4& transformation,
-	Vec4& color) {
-}
+void ViewRender::UpdateCameraRotation() {
 
+		static sf::Vector2i lastMousePosition = sf::Mouse::getPosition();
+		sf::Vector2i currentMousePosition = sf::Mouse::getPosition();
+
+		sf::Vector2i delta = currentMousePosition - lastMousePosition;
+		float sensitivity = 0.5f;  // Sensibilité de la rotation
+
+		f_Cam->Rotate(-delta.x * sensitivity, glm::vec3(0.0f, 1.0f, 0.0f));  // Rotation autour de l'axe Y
+		f_Cam->Rotate(-delta.y * sensitivity, glm::vec3(1.0f, 0.0f, 0.0f));  // Rotation autour de l'axe X
+
+		lastMousePosition = currentMousePosition;
+}
 
 void ViewRender::Clear()
 {
@@ -147,12 +192,6 @@ void ViewRender::Clear()
 }
 
 void ViewRender::UIRender() {
-
-	ImGui::Begin("f_Cam Speed");
-	ImGui::InputFloat("speed", &m_cameraspeed);
-	glm::vec3 _campos = f_Cam->GetPosition();
-	IMGUICPP::DrawVector3Windowf(_campos, "f_Cam Postion");
-	//IMGUICPP::DrawVector3Windowf(m_objCam->transform.rotation, "f_Cam Rotation");
 
 	IMGUICPP::DrawVector3Windowf(m_objtest->transform.position, "Cube 1 Position");
 	IMGUICPP::DrawVector3Windowf(m_objtest2->transform.position, "Cube 2 Position");
@@ -166,10 +205,8 @@ void ViewRender::Render(sf::RenderWindow& window)
 {
 	//t->render3D(window);
 	//GameManager::Instance().DrawAllGameObjects();
-	//m_objtest->Draw();
+	m_objtest->Draw();
 	//m_objtest2->Draw();
-
- f_Cam->Draw(*m_mesh,m_shaderProgram);
 }
 
 

@@ -111,7 +111,7 @@ void Map::BuildLinedef()
 	for (int i = 0; i < m_Linedefs.size(); i++)
 	{
 		GameObject* obj = new GameObject();
-		Mesh* mesh = GameManager::Instance().addComponent<Mesh>(obj->id,Mesh::CreateQuad());
+		/*Mesh* mesh = GameManager::Instance().addComponent<Mesh>(obj->id,Mesh::CreateQuad());*/
 		WADLinedef* linedef = &m_pLinedefs->at(i);
 		if (linedef->Flags & ELINEDEFFLAGS::eTWOSIDED)
 		{

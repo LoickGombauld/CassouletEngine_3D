@@ -1,12 +1,14 @@
 #pragma once
 #include <CassouletEngineLibrarie/System/Component.h>
-
+#include <CassouletEngineLibrarie/Doom/DataTypes.h>
 class FreeCamera;
+
 
 struct MeshVertex {
 	glm::vec3 Position;
 	glm::vec3 Normal;
 	glm::vec2 TexCoords;
+	glm::vec3 Color;
 };
 
 class CASSOULET_DLL Mesh : public Component
@@ -20,6 +22,8 @@ public:
 	Mesh::~Mesh();
 
 	static Mesh* CreateCube();
+
+	static Mesh* CreateWall(const std::vector<WallSegment>& walls);
 	static Mesh* CreateQuad();
 	static Mesh* CreateTriangle();
 	static Mesh* CreateSphere(float radius = 1.0f, unsigned int sectorCount = 36, unsigned int stackCount = 18);
@@ -28,6 +32,7 @@ public:
 	void SetCam(FreeCamera* pcam);
 
 	void Draw();
+	void Draw(GLuint shaderProgram, glm::mat4 view, glm::mat4 projection, glm::mat4 model);
 	void SetTexture(sf::Texture* ptexture, bool isTransparent);
 	bool doubleSided;
 

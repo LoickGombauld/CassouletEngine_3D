@@ -6,6 +6,7 @@ class Player;
 class ViewRender;
 class Things;
 class GameObject;
+class Mesh;
 
 
 class CASSOULET_DLL Map
@@ -42,6 +43,7 @@ protected:
 	void BuildSidedefs();
 	void BuildLinedef();
 	void BuildSeg();
+	void BuildWall();
 	void RenderBSPNodes();
 	void RenderBSPNodes(int iNodeID);
 	void RenderSubsector(int iSubsectorID);
@@ -64,8 +66,6 @@ protected:
 	std::vector<WADLinedef>* m_pLinedefs;
 	std::vector<WADSeg>* m_pSegs;
 
-	std::vector<GameObject*> m_objects;
-
 	int m_XMin;
 	int m_XMax;
 	int m_YMin;
@@ -77,4 +77,6 @@ protected:
 	Player* m_pPlayer;
 	Things* m_pThings;
 	ViewRender* m_pViewRender;
+
+	Mesh* m_walls;
 };

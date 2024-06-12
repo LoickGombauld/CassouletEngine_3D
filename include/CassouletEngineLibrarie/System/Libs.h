@@ -16,6 +16,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+
 // SFML
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
@@ -50,13 +51,6 @@
 
 //Cassoulet DLL
 #include <CassouletEngineLibrarie/System/Export.hpp>
-
-using Vec2 = sf::Glsl::Vec2;
-using Vec3 = sf::Glsl::Vec3;
-using Vec4 = sf::Glsl::Vec4;
-
-using Mat4 = sf::Glsl::Mat4;
-using Mat3 = sf::Glsl::Mat3;
 
 #define PI 3.14159265358979f
 

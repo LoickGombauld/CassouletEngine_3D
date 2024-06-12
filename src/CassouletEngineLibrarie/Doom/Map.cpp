@@ -5,6 +5,31 @@
 #include <CassouletEngineLibrarie/Doom/Things.h>
 #include <CassouletEngineLibrarie/OpenGL/Mesh.h>
 #include <CassouletEngineLibrarie/Doom/Player.h>
+#include <CassouletEngineLibrarie/OpenGL/Matrix.h>
+
+std::vector<WallSegment> CreateWallSegments(Vertex* vertices, Linedef* linedefs, Sector* sectors, int numLinedefs) {
+	std::vector<WallSegment> walls;
+
+	for (int i = 0; i < numLinedefs; ++i) {
+		Linedef& linedef = linedefs[i];
+		Vertex& startVertex = *linedef.pStartVertex;
+		Vertex& endVertex = *linedef.pEndVertex;
+
+		Sector& sector = sectors[linedef.SectorTag];  // Secteur associé au linedef
+
+		glm::vec3 startFloor(startVertex.XPosition / 100.0f, sector.FloorHeight / 50.f, startVertex.YPosition /50.f);
+		glm::vec3 endFloor(endVertex.XPosition / 100.0f, sector.FloorHeight / 100.0f, endVertex.YPosition / 100.0f);
+		glm::vec3 startCeiling(startVertex.XPosition / 100.0f, sector.CeilingHeight / 100.0f, startVertex.YPosition / 100.0f);
+		glm::vec3 endCeiling(endVertex.XPosition / 100.0f, sector.CeilingHeight / 100.0f, endVertex.YPosition / 100.0f);
+
+		glm::vec3 normal = glm::normalize(glm::cross(endFloor - startFloor, startCeiling - startFloor));
+
+		walls.push_back({ startFloor, endFloor, normal });
+		walls.push_back({ startCeiling, endCeiling, normal });
+	}
+
+	return walls;
+}
 
 Map::Map(ViewRender* pViewRender, const std::string& sName, Player* pPlayer, Things* pThings) : m_sName(sName),
 m_XMin(INT_MAX), m_XMax(INT_MIN), m_YMin(INT_MAX), m_YMax(INT_MIN), m_iLumpIndex(-1), m_pPlayer(pPlayer),
@@ -14,7 +39,6 @@ m_pThings(pThings), m_pViewRender(pViewRender)
 	m_pSidedefs = new std::vector<WADSidedef>();
 	m_pLinedefs = new std::vector<WADLinedef>();
 	m_pSegs = new std::vector<WADSeg>();
-
 }
 
 Map::~Map()
@@ -27,6 +51,7 @@ void Map::Init()
 	BuildSidedefs();
 	BuildLinedef();
 	BuildSeg();
+	BuildWall();
 }
 
 void Map::BuildSectors()
@@ -79,6 +104,7 @@ void Map::BuildLinedef()
 	Linedef linedef;
 	for (int i = 0; i < m_pLinedefs->size(); ++i)
 	{
+
 		wadlinedef = m_pLinedefs->at(i);
 
 		linedef.pStartVertex = &m_Vertexes[wadlinedef.StartVertexID];
@@ -86,7 +112,8 @@ void Map::BuildLinedef()
 		linedef.Flags = wadlinedef.Flags;
 		linedef.LineType = wadlinedef.LineType;
 		linedef.SectorTag = wadlinedef.SectorTag;
-
+		linedef.dx = linedef.pEndVertex->XPosition - linedef.pStartVertex->XPosition;
+		linedef.dy = linedef.pEndVertex->YPosition - linedef.pStartVertex->YPosition;
 		if (wadlinedef.RightSidedef == 0xFFFF)
 		{
 			linedef.pRightSidedef = nullptr;
@@ -105,48 +132,37 @@ void Map::BuildLinedef()
 			linedef.pLeftSidedef = &m_Sidedefs[wadlinedef.LeftSidedef];
 		}
 
+		//auto start = *linedef.pStartVertex;
+		//auto end = *linedef.pEndVertex;
+
+		//start.XPosition /= MAPBLOCKUNITS;
+		//start.YPosition /= MAPBLOCKUNITS;
+		//end.XPosition /= MAPBLOCKUNITS;
+		//end.YPosition /= MAPBLOCKUNITS;
+
+		//float x = linedef.dx / static_cast<float>(MAPBLOCKUNITS);
+		//float y = linedef.dy / static_cast<float>(MAPBLOCKUNITS);
+		//float length = sqrtf(x * x + y * y);
+		//float angle = atan2f(y, x); // Note: atan2f(y, x) to match the example's calculation
+
+		//glm::vec3 position(start.XPosition, 0.0f, start.YPosition);
+		//glm::vec3 scale(length, 1.0f, 1.0f); // Adjust scale.y as needed
+		//glm::vec3 rotation(0.0f, glm::radians(angle), 0.0f);
+
+
+		//glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), position);
+		//glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
+		//glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scale);
+
+		//// Combine the transformations: scale -> rotate -> translate
+		//glm::mat4 modelMatrix = translationMatrix * rotationMatrix * scaleMatrix;
+
+		//// Apply the transformation to the object's transform
+		//obj->transform.SetTransform(modelMatrix);
+
 		m_Linedefs.push_back(linedef);
 	}
-
-	for (int i = 0; i < m_Linedefs.size(); i++)
-	{
-		GameObject* obj = new GameObject();
-		/*Mesh* mesh = GameManager::Instance().addComponent<Mesh>(obj->id,Mesh::CreateQuad());*/
-		WADLinedef* linedef = &m_pLinedefs->at(i);
-		if (linedef->Flags & ELINEDEFFLAGS::eTWOSIDED)
-		{
-			// TODO
-		}
-		else 
-		{
-			auto start = m_Vertexes[linedef->StartVertexID];
-			auto end = m_Vertexes[linedef->EndVertexID];
-			start.XPosition /= MAPBLOCKUNITS;
-			start.YPosition /= MAPBLOCKUNITS;
-			end.XPosition /= MAPBLOCKUNITS;
-			end.YPosition /= MAPBLOCKUNITS;
-
-			float x = end.XPosition - start.XPosition, y = end.YPosition - start.YPosition;
-			float size = sqrtf(x * x + y * y);
-			float angle = atan2f(y, x);
-
-
-			obj->transform.position = Vector3(start.XPosition, 0, start.YPosition);
-			obj->transform.scale = Vector3(size, 1, 1.f);
-			obj->transform.RotateTransform(Vector3( 0.f, 1.f, 0.f ), angle);
-			//Mat4 model = mat4_mul(mat4_mul(scale, rotation), translation);
-			//std::vector<GLfloat,180Ui64 > verticeArray;
-			//for (int i = 0; i < 16; i++)
-			//{
-			//	verticeArray[i] = model.array[i];
-			//}
-
-			//mesh = Mesh::CreateMesh(verticeArray,16);
-			m_objects.push_back(obj);
-		}
-	}
 	delete m_pLinedefs;
-	m_pLinedefs = nullptr;
 }
 
 void Map::BuildSeg()
@@ -203,6 +219,12 @@ void Map::BuildSeg()
 
 	delete m_pSegs;
 	m_pSegs = nullptr;
+}
+
+void Map::BuildWall()
+{
+	GameObject* obj = new GameObject();
+	m_walls = GameManager::Instance().addComponent<Mesh>(obj->id, Mesh::CreateWall(CreateWallSegments(m_Vertexes.data(), m_Linedefs.data(), m_Sectors.data(), m_Linedefs.size())));
 }
 
 void Map::AddVertex(Vertex& v)
@@ -289,10 +311,7 @@ void Map::Render3DView()
 }
 
 void Map::Render3DTest() {
-	for (GameObject* var : m_objects)
-	{
-		var->Draw();
-	}
+	m_walls->Draw();
 }
 
 void Map::RenderBSPNodes()

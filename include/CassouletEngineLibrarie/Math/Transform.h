@@ -1,33 +1,72 @@
 #pragma once
-
-#include <CassouletEngineLibrarie/Math/Vector3.h>
+#include <CassouletEngineLibrarie/System/Libs.h>
 
 //responsible for keeping track of a game objects position, scale and rotation in the game world
 class CASSOULET_DLL Transform
 {
 public:
+    Transform() : position(0.0f, 0.0f, 0.0f), rotation(0.0f, 0.0f, 0.0f), scale(1.0f, 1.0f, 1.0f),modelMatrix(glm::mat4(1.0f)) {};
 
-	//game object world position
-	Vector3 position = Vector3(0, 0, 0);
-	//game object world scale
-	Vector3 scale = Vector3(1, 1, 1);
-	//game object world rotation
-	Vector3 rotation;
+    glm::vec3 position;
+    glm::vec3 rotation; // en degrés
+    glm::vec3 scale;
+    glm::mat4 modelMatrix;
 
-	void Translate(Vector3 translation);
+    glm::mat4 GetModelMatrix() const {
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, position);
+        model = glm::rotate(model, glm::radians(rotation.x), glm::vec3(1, 0, 0));
+        model = glm::rotate(model, glm::radians(rotation.y), glm::vec3(0, 1, 0));
+        model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(0, 0, 1));
+        model = glm::scale(model, scale);
+        return model;
+    }
 
-	Vector3 RotateTransform(Vector3 axis, float angle);
+    void SetTransform(const glm::mat4& matrix) {
+        modelMatrix = matrix;
+        DecomposeModelMatrix();
+    }
 
-	//returns a vector pointing up relative to the position and rotation of the game object
-	Vector3 Up();
-	//returns a vector pointing down relative to the position and rotation of the game object
-	Vector3 Down();
-	//returns a vector pointing right relative to the position and rotation of the game object
-	Vector3 Right();
-	//returns a vector pointing left relative to the position and rotation of the game object
-	Vector3 Left();
-	//returns a vector pointing forward relative to the position and rotation of the game object
-	Vector3 Forward();
-	//returns a vector pointing back relative to the position and rotation of the game object
-	Vector3 Back();
+    void SetTransform(const glm::vec3& newPosition, const glm::vec3& newRotation, const glm::vec3& newScale) 
+    {
+        position = newPosition;
+        rotation = newRotation;
+        scale = newScale;
+        UpdateModelMatrix();
+    }
+
+private:
+    void UpdateModelMatrix() {
+        glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), position);
+        glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+        rotationMatrix = glm::rotate(rotationMatrix, rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+        rotationMatrix = glm::rotate(rotationMatrix, rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
+        glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scale);
+
+        modelMatrix = translationMatrix * rotationMatrix * scaleMatrix;
+    }
+
+    void DecomposeModelMatrix() {
+        // Decompose the model matrix to position, rotation, and scale
+        // This requires extracting the components from the model matrix
+        // Assuming column-major order as used by glm
+
+        position = glm::vec3(modelMatrix[3]);
+
+        glm::vec3 scaleVec;
+        scaleVec.x = glm::length(glm::vec3(modelMatrix[0]));
+        scaleVec.y = glm::length(glm::vec3(modelMatrix[1]));
+        scaleVec.z = glm::length(glm::vec3(modelMatrix[2]));
+        scale = scaleVec;
+
+        glm::mat4 rotationMatrix = modelMatrix;
+        rotationMatrix[3] = glm::vec4(0, 0, 0, 1);
+        rotationMatrix[0] /= scaleVec.x;
+        rotationMatrix[1] /= scaleVec.y;
+        rotationMatrix[2] /= scaleVec.z;
+
+        rotation.x = glm::degrees(atan2(rotationMatrix[1][2], rotationMatrix[2][2]));
+        rotation.y = glm::degrees(atan2(-rotationMatrix[0][2], sqrt(pow(rotationMatrix[1][2], 2) + pow(rotationMatrix[2][2], 2))));
+        rotation.z = glm::degrees(atan2(rotationMatrix[0][1], rotationMatrix[0][0]));
+    }
 };

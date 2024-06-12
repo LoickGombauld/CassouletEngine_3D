@@ -56,18 +56,6 @@ void main()
 }
 )";
 
-static const GLfloat colors[] = {
-	1.0f, 0.0f, 0.0f, // Rouge
-	0.0f, 1.0f, 0.0f, // Vert
-	0.0f, 0.0f, 1.0f, // Bleu
-	1.0f, 1.0f, 0.0f, // Jaune
-	1.0f, 0.0f, 0.0f, // Rouge
-	0.0f, 1.0f, 0.0f, // Vert
-	0.0f, 0.0f, 1.0f, // Bleu
-	1.0f, 1.0f, 0.0f  // Jaune
-};
-
-
 static GLuint LoadShader(const char* shaderSrc, GLenum shaderType) {
 
 	GLuint shader = glCreateShader(shaderType);
@@ -102,6 +90,8 @@ static GLuint CreateShaderProgram(const char* vertexSrc, const char* fragmentSrc
 		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
 		throw std::runtime_error("Program linking failed: " + std::string(infoLog));
 	}
+	glUseProgram(shaderProgram);
+	
 
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
@@ -109,25 +99,32 @@ static GLuint CreateShaderProgram(const char* vertexSrc, const char* fragmentSrc
 	return shaderProgram;
 }
 
-ViewRender::ViewRender() : f_Cam(new FreeCamera())
+GLuint ViewRender::shaderProgram;
+GLuint ViewRender:: model_location;
+GLuint ViewRender:: view_location;
+GLuint ViewRender:: projection_location;
+GLuint ViewRender:: color_location;
+FreeCamera* ViewRender::camera;
+
+ViewRender::ViewRender()
 {
-	m_shaderProgram = CreateShaderProgram(vertSrc,fragSrc);
+	camera = f_Cam.get();
+	shaderProgram = CreateShaderProgram(vertSrc, fragSrc);
+	projection_location = glGetUniformLocation(shaderProgram, "projection");
+	model_location = glGetUniformLocation(shaderProgram, "model");
+	view_location = glGetUniformLocation(shaderProgram, "view");
+	color_location = glGetUniformLocation(shaderProgram, "Color");
 	m_objtest = new GameObject();
 	m_objtest2 = new GameObject();
-	m_mesh = GameManager::Instance().addComponent<Mesh>(m_objtest->id, Mesh::CreateCube());
-	m_mesh2 = GameManager::Instance().addComponent<Mesh>(m_objtest2->id, Mesh::CreateCube());
-	m_mesh->shaderID = m_shaderProgram;
-	m_mesh->SetCam(f_Cam.get());
-	m_objtest2->transform.position = Vector3(25, 0, 0);
+
+	m_objtest2->transform.position = glm::vec3(25, 0, 0);
 	t = new Test();
 }
 
-ViewRender::~ViewRender(){
-	glDeleteProgram(m_shaderProgram);
+ViewRender::~ViewRender() {
+	glDeleteProgram(shaderProgram);
 	delete(m_objtest);
 	delete(m_objtest2);
-	delete(m_mesh);
-	delete(m_mesh2);
 	delete(t);
 	f_Cam.reset();
 }
@@ -144,20 +141,6 @@ void ViewRender::GLInit(int width, int height)
 }
 
 void ViewRender::UpdateCameraMovement(float dt) {
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
-		f_Cam->Rotate(1.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-	}
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
-		f_Cam->Rotate(-1.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-	}
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
-		f_Cam->Rotate(1.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-	}
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
-		f_Cam->Rotate(-1.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-	}
-
-
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z)) {
 		f_Cam->MoveForward(dt);
 	}
@@ -172,20 +155,6 @@ void ViewRender::UpdateCameraMovement(float dt) {
 	}
 }
 
-void ViewRender::UpdateCameraRotation() {
-
-		static sf::Vector2i lastMousePosition = sf::Mouse::getPosition();
-		sf::Vector2i currentMousePosition = sf::Mouse::getPosition();
-
-		sf::Vector2i delta = currentMousePosition - lastMousePosition;
-		float sensitivity = 0.5f;  // Sensibilité de la rotation
-
-		f_Cam->Rotate(-delta.x * sensitivity, glm::vec3(0.0f, 1.0f, 0.0f));  // Rotation autour de l'axe Y
-		f_Cam->Rotate(-delta.y * sensitivity, glm::vec3(1.0f, 0.0f, 0.0f));  // Rotation autour de l'axe X
-
-		lastMousePosition = currentMousePosition;
-}
-
 void ViewRender::Clear()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -193,19 +162,22 @@ void ViewRender::Clear()
 
 void ViewRender::UIRender() {
 
-	IMGUICPP::DrawVector3Windowf(m_objtest->transform.position, "Cube 1 Position");
-	IMGUICPP::DrawVector3Windowf(m_objtest2->transform.position, "Cube 2 Position");
-	IMGUICPP::DrawVector3Windowf(m_boxScale, "Cube Scale");
+	IMGUICPP::DrawVector3Windowf(f_Cam->position, "f_Cam Postion");
+	IMGUICPP::DrawVector2Windowf(f_Cam->rotation, "f_Cam Rotation");
+	ImGui::Begin("f_Cam Speed");
+	ImGui::DragFloat("speed", &f_Cam->speed);
 	ImGui::End();
 
-	m_objtest->transform.scale = Vector3(m_boxScale.x, m_boxScale.y, m_boxScale.z);
+	IMGUICPP::DrawVector3Windowf(m_objtest->transform.position, "Cube 1 Position");
+	IMGUICPP::DrawVector3Windowf(m_objtest2->transform.position, "Cube 2 Position");
+	ImGui::End();
 }
 
 void ViewRender::Render(sf::RenderWindow& window)
 {
 	//t->render3D(window);
 	//GameManager::Instance().DrawAllGameObjects();
-	m_objtest->Draw();
+	//m_objtest->Draw();
 	//m_objtest2->Draw();
 }
 

@@ -1,7 +1,8 @@
 #include <CassouletEngineLibrarie/OpenGL/Mesh.h>
 #include <CassouletEngineLibrarie/System/GameObject.h>
-#include <CassouletEngineLibrarie/Doom/DataTypes.h>
+
 #include <CassouletEngineLibrarie/OpenGL/FreeCamera.h>
+#include <CassouletEngineLibrarie/System/ViewRender.h>
 
 // Définition des couleurs des vertices
 static const GLfloat colors[] = {
@@ -20,6 +21,8 @@ Mesh::Mesh() : VAO(0), VBO(0), EBO(0), m_texture(nullptr), m_isTransparent(false
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
+	shaderID = ViewRender::shaderProgram;
+	m_cam = ViewRender::camera;
 }
 
 Mesh::~Mesh()
@@ -40,17 +43,23 @@ void Mesh::SetMesh(std::vector<MeshVertex>& vertices, std::vector<GLuint>& indic
 	glBufferData(GL_ARRAY_BUFFER, m_vertices.size() * sizeof(MeshVertex), &m_vertices[0], GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(unsigned int),
-		&m_indices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(unsigned int), &m_indices[0], GL_STATIC_DRAW);
+
 	// vertex positions
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)0);
+
 	// vertex normals
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, Normal));
+
 	// vertex texture coords
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, TexCoords));
+
+	// vertex colors
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, Color));
 
 	glBindVertexArray(0);
 
@@ -72,6 +81,17 @@ void Mesh::SetTexture(sf::Texture* ptexture, bool isTransparent)
 	m_isTransparent = isTransparent;
 }
 
+void Mesh::Draw(GLuint shaderProgram, glm::mat4 view, glm::mat4 projection, glm::mat4 model) {
+	glUseProgram(shaderProgram);
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+	glBindVertexArray(VAO);
+	glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+}
+
 void Mesh::Draw()
 {
 	//if texutre is load then bind
@@ -83,16 +103,14 @@ void Mesh::Draw()
 	if (!hasVertices)
 		return;
 
-	if (m_cam != nullptr)
-	{
-		// Configure les matrices de transformation
-		glm::mat4 model = glm::mat4(1.0f); // Vous pouvez également ajouter des transformations spécifiques à l'objet ici
-		glUseProgram(shaderID);
-		glUniformMatrix4fv(glGetUniformLocation(shaderID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
-		// Utilisez les matrices view et projection de la caméra
-		m_cam->SetShaderUniforms(shaderID);
-	}
+	// Configure les matrices de transformation
+	glm::mat4 model = gameObject->transform.GetModelMatrix(); // Vous pouvez également ajouter des transformations spécifiques à l'objet ici
+	glUseProgram(shaderID);
+	glUniformMatrix4fv(glGetUniformLocation(shaderID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+	// Utilisez les matrices view et projection de la caméra
+	m_cam->SetShaderUniforms(shaderID);
+
 
 	//disable cullface if we want to draw both sides, else enable it
 
@@ -121,14 +139,15 @@ Mesh* Mesh::CreateCube() {
 
 	std::vector<MeshVertex> vertices = {
 		// Positions          // Normals           // Texture Coords
-		{{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}},
-		{{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 0.0f}},
-		{{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f}},
-		{{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 1.0f}},
-		{{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {0.0f, 0.0f}},
-		{{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {1.0f, 0.0f}},
-		{{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {1.0f, 1.0f}},
-		{{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {0.0f, 1.0f}},
+		{{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}}, // Rouge
+		{{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}}, // Vert
+		{{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}}, // Bleu
+		{{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 1.0f}, {1.0f, 1.0f, 0.0f}}, // Jaune
+		{{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}}, // Rouge
+		{{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}}, // Vert
+		{{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}}, // Bleu
+		{{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {0.0f, 1.0f}, {1.0f, 1.0f, 0.0f}}  // Jaune
+
 	};
 
 	std::vector<GLuint> indices = {
@@ -144,15 +163,35 @@ Mesh* Mesh::CreateCube() {
 	return cube;
 }
 
+Mesh* Mesh::CreateWall(const std::vector<WallSegment>& walls)
+{
+	Mesh* wallMesh = new Mesh();
+	std::vector<MeshVertex> vertices;
+	std::vector<GLuint> indices;
+
+	for (const auto& wall : walls) {
+		MeshVertex startVertex = { wall.start, wall.normal, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f} };
+		MeshVertex endVertex = { wall.end, wall.normal, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f} };
+
+		vertices.push_back(startVertex);
+		vertices.push_back(endVertex);
+
+		indices.push_back(vertices.size() - 2);
+		indices.push_back(vertices.size() - 1);
+	}
+	wallMesh->SetMesh(vertices, indices);
+	return wallMesh;
+}
+
 Mesh* Mesh::CreateQuad() {
 	Mesh* quad = new Mesh();
 
 	std::vector<MeshVertex> vertices = {
 		// Positions          // Normals           // Texture Coords
-		{{-0.5f, -0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-		{{ 0.5f, -0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
-		{{ 0.5f,  0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-		{{-0.5f,  0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		{{-0.5f, -0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f},{1.0f, 0.0f, 0.0f}},
+		{{ 0.5f, -0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f},{0.0f, 1.0f, 0.0f}},
+		{{ 0.5f,  0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f},{0.0f, 0.0f, 1.0f}},
+		{{-0.5f,  0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f},{1.0f, 1.0f, 0.0f}},
 	};
 
 	std::vector<GLuint> indices = {
@@ -182,7 +221,7 @@ Mesh* Mesh::CreateTriangle() {
 	return triangle;
 }
 
-Mesh* Mesh::CreateSphere(float radius, unsigned int sectorCount , unsigned int stackCount)
+Mesh* Mesh::CreateSphere(float radius, unsigned int sectorCount, unsigned int stackCount)
 {
 
 	Mesh* sphere = new Mesh();

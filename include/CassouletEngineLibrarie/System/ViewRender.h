@@ -17,28 +17,27 @@ public:
 
 	void GLInit(int width, int height);
 	void UpdateCameraMovement(float dt);
-	void UpdateCameraRotation();
 	void Clear();
 	void Update();
 	void UpdateResize(int width, int height);
 	void Render(sf::RenderWindow& window);
 	void UIRender();
 
-	std::shared_ptr<FreeCamera> f_Cam;
+	static GLuint shaderProgram;
+	static GLuint model_location;
+	static GLuint view_location;
+	static GLuint projection_location;
+	static GLuint color_location;
+	static FreeCamera* camera;
 
-	float m_cameraSensitivity = 100.f;
-
-    GLuint m_shaderProgram;
 private:
+	std::shared_ptr<FreeCamera> f_Cam = std::make_shared<FreeCamera>();
 	Map* m_map;
 	int m_screenWidth;
 	int m_screenHeight;
 	float fps;
 
-	Vec3 m_boxScale = Vec3(1, 1, 1);
 	GameObject* m_objtest;
 	GameObject* m_objtest2;
-	Mesh* m_mesh;
-	Mesh* m_mesh2;
 	Test* t;
 };

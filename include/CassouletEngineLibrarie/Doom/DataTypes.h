@@ -11,9 +11,6 @@ const float SCALE = 2.5f;
 
 const int MAPBLOCKUNITS = 128;
 
-
-
-
 inline int FixedDiv(int16_t a, int16_t b)
 {
 	if ((abs(a) >> 14) >= abs(b))
@@ -295,6 +292,11 @@ struct BlockMapOffset
 	uint16_t offset1;
 	uint16_t offsetn;
 };
+
+struct WallSegment {
+	glm::vec3 start, end, normal;
+};
+
 
 double static  CalculateDistance(sf::Vector2f& a, sf::Vector2f& b)
 {

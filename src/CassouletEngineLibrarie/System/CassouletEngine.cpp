@@ -93,11 +93,9 @@ void CassouletEngine::KeyReleasedMouseInput()
 void CassouletEngine::MouseMovedInput() {
 	if (sf::Mouse::isButtonPressed(sf::Mouse::Right))
 	{
-		ProcessMouseMovement();
+		ProcessMouseMovement(sf::Mouse::getPosition().x, sf::Mouse::getPosition().y);
 	}
 }
-
-std::shared_ptr<FreeCamera> CassouletEngine::GetCam() {return m_pViewRender->f_Cam; };
 
 void CassouletEngine::KeyPressed()
 {
@@ -151,8 +149,30 @@ void CassouletEngine::KeyReleased()
 	}
 }
 
-void CassouletEngine::ProcessMouseMovement() {
-	m_pViewRender->UpdateCameraRotation();
+void CassouletEngine::ProcessMouseMovement(float xPos,float yPos) {
+	if (m_firstMouse) {
+		m_lastX = xPos;
+		m_lastY = yPos;
+		m_firstMouse = false;
+	}
+
+	float xOffset = xPos - m_lastX;
+	float yOffset = m_lastY - yPos; // Inverse car l'origine de l'écran est en haut à gauche
+	m_lastX = xPos;
+	m_lastY = yPos;
+
+	xOffset *= ViewRender::camera->cameraSensitivity;
+	yOffset *= ViewRender::camera->cameraSensitivity;
+
+	m_pViewRender->camera->rotation.y += xOffset * m_dt.asSeconds();
+	m_pViewRender->camera->rotation.x += yOffset * m_dt.asSeconds();
+
+	// Limiter l'angle de tangage entre -89° et 89° pour éviter les erreurs de calcul
+	if (m_pViewRender->camera->rotation.x > 89.0f)
+		m_pViewRender->camera->rotation.x = 89.0f;
+	if (m_pViewRender->camera->rotation.x < -89.0f)
+		m_pViewRender->camera->rotation.x = -89.0f;
+	m_pViewRender->camera->UpdateRotation();
 }
 
 

@@ -27,7 +27,6 @@ inline int FixedDiv(int16_t a, int16_t b)
 	}
 }
 
-
 enum EMAPLUMPSINDEX
 {
 	eName,
@@ -66,7 +65,6 @@ enum ELINEDEFDLOPETYPE
 
 };
 
-
 enum
 {
 	BOXTOP,
@@ -104,16 +102,6 @@ struct Vertex
 	int16_t YPosition;
 };
 
-struct WADSector
-{
-	int16_t FloorHeight;
-	int16_t CeilingHeight;
-	char FloorTexture[8];
-	char CeilingTexture[8];
-	uint16_t Lightlevel;
-	uint16_t Type;
-	uint16_t Tag;
-};
 
 struct Sector
 {
@@ -126,15 +114,6 @@ struct Sector
 	uint16_t Tag;
 };
 
-struct WADSidedef
-{
-	int16_t XOffset;
-	int16_t YOffset;
-	char UpperTexture[8];
-	char LowerTexture[8];
-	char MiddleTexture[8];
-	uint16_t SectorID;
-};
 
 struct Sidedef
 {
@@ -144,17 +123,6 @@ struct Sidedef
 	char LowerTexture[9];
 	char MiddleTexture[9];
 	Sector* pSector;
-};
-
-struct WADLinedef
-{
-	uint16_t StartVertexID;
-	uint16_t EndVertexID;
-	uint16_t Flags;
-	uint16_t LineType;
-	uint16_t SectorTag;
-	uint16_t RightSidedef; //0xFFFF means there is no sidedef
-	uint16_t LeftSidedef;  //0xFFFF means there is no sidedef
 };
 
 struct Linedef
@@ -170,16 +138,6 @@ struct Linedef
 	Sidedef* pLeftSidedef;
 	int16_t bbox[4];
 	ELINEDEFDLOPETYPE slopeType;
-};
-
-struct WADSeg
-{
-	uint16_t StartVertexID;
-	uint16_t EndVertexID;
-	uint16_t SlopeAngle;
-	uint16_t LinedefID;
-	uint16_t Direction; // 0 same as linedef, 1 opposite of linedef
-	uint16_t Offset; // distance along linedef to start of seg
 };
 
 struct Seg
@@ -222,6 +180,48 @@ struct Node
 	uint16_t LeftChildID;
 };
 
+struct WADLinedef
+{
+	uint16_t StartVertexID;
+	uint16_t EndVertexID;
+	uint16_t Flags;
+	uint16_t LineType;
+	uint16_t SectorTag;
+	uint16_t RightSidedef; //0xFFFF means there is no sidedef
+	uint16_t LeftSidedef;  //0xFFFF means there is no sidedef
+};
+
+struct WADSector
+{
+	int16_t FloorHeight;
+	int16_t CeilingHeight;
+	char FloorTexture[8];
+	char CeilingTexture[8];
+	uint16_t Lightlevel;
+	uint16_t Type;
+	uint16_t Tag;
+};
+
+struct WADSidedef
+{
+	int16_t XOffset;
+	int16_t YOffset;
+	char UpperTexture[8];
+	char LowerTexture[8];
+	char MiddleTexture[8];
+	uint16_t SectorID;
+};
+
+struct WADSeg
+{
+	uint16_t StartVertexID;
+	uint16_t EndVertexID;
+	uint16_t SlopeAngle;
+	uint16_t LinedefID;
+	uint16_t Direction; // 0 same as linedef, 1 opposite of linedef
+	uint16_t Offset; // distance along linedef to start of seg
+};
+
 struct WADPatchHeader
 {
 	uint16_t Width;
@@ -229,15 +229,6 @@ struct WADPatchHeader
 	int16_t LeftOffset;
 	int16_t TopOffset;
 	uint32_t* pColumnOffsets;
-};
-
-struct PatchColumnData
-{
-	uint8_t TopDelta;
-	uint8_t Length;
-	uint8_t	PaddingPre;
-	uint8_t* pColumnData;
-	uint8_t PaddingPost;
 };
 
 struct WADPNames
@@ -278,6 +269,16 @@ struct WADPalette
 	sf::Color Colors[256];
 };
 
+struct PatchColumnData
+{
+	uint8_t TopDelta;
+	uint8_t Length;
+	uint8_t	PaddingPre;
+	uint8_t* pColumnData;
+	uint8_t PaddingPost;
+};
+
+
 struct BlockMapHeader
 {
 	uint16_t originX;
@@ -292,12 +293,6 @@ struct BlockMapOffset
 	uint16_t offset1;
 	uint16_t offsetn;
 };
-
-struct WallSegment {
-	glm::vec3 startFloor, endFloor, startCeiling, endCeiling;
-	glm::vec3 normal;
-};
-
 
 double static  CalculateDistance(sf::Vector2f& a, sf::Vector2f& b)
 {

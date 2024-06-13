@@ -9,7 +9,7 @@
 #define SUBSECTORIDENTIFIER 0x8000
 const float SCALE = 2.5f;
 
-const int MAPBLOCKUNITS = 128;
+const float MAPBLOCKUNITS = 100.f;
 
 inline int FixedDiv(int16_t a, int16_t b)
 {
@@ -294,7 +294,8 @@ struct BlockMapOffset
 };
 
 struct WallSegment {
-	glm::vec3 start, end, normal;
+	glm::vec3 startFloor, endFloor, startCeiling, endCeiling;
+	glm::vec3 normal;
 };
 
 

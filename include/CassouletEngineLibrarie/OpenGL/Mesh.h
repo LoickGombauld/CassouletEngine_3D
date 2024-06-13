@@ -23,7 +23,7 @@ public:
 
 	static Mesh* CreateCube();
 
-	static Mesh* CreateWall(const std::vector<WallSegment>& walls);
+	static Mesh* CreateWall(const std::vector<WallSegment>& walls, Vertex* vertices, Sector* sectors, int numSectors);
 	static Mesh* CreateQuad();
 	static Mesh* CreateTriangle();
 	static Mesh* CreateSphere(float radius = 1.0f, unsigned int sectorCount = 36, unsigned int stackCount = 18);

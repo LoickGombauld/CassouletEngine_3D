@@ -114,10 +114,8 @@ void Mesh::Draw()
 
 	//disable cullface if we want to draw both sides, else enable it
 
-	if (doubleSided)
 		glDisable(GL_CULL_FACE);
-	else
-		glEnable(GL_CULL_FACE);
+
 
 	if (m_isTransparent) {
 		glEnable(GL_BLEND);
@@ -163,23 +161,83 @@ Mesh* Mesh::CreateCube() {
 	return cube;
 }
 
-Mesh* Mesh::CreateWall(const std::vector<WallSegment>& walls)
+Mesh* Mesh::CreateWall(const std::vector<WallSegment>& walls, Vertex* vertices, Sector* sectors, int numSectors)
 {
 	Mesh* wallMesh = new Mesh();
-	std::vector<MeshVertex> vertices;
+	std::vector<MeshVertex> verticesList;
 	std::vector<GLuint> indices;
 
 	for (const auto& wall : walls) {
-		MeshVertex startVertex = { wall.start, wall.normal, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f} };
-		MeshVertex endVertex = { wall.end, wall.normal, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f} };
+        MeshVertex startFloorVertex = { wall.startFloor, wall.normal, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f} };
+        MeshVertex endFloorVertex = { wall.endFloor, wall.normal, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f} };
+        MeshVertex startCeilingVertex = { wall.startCeiling, wall.normal, {0.0f, 1.0f}, {0.0f, 0.0f, 1.0f} };
+        MeshVertex endCeilingVertex = { wall.endCeiling, wall.normal, {1.0f, 1.0f}, {1.0f, 1.0f, 0.0f} };
 
-		vertices.push_back(startVertex);
-		vertices.push_back(endVertex);
+        GLuint baseIndex = verticesList.size();
 
-		indices.push_back(vertices.size() - 2);
-		indices.push_back(vertices.size() - 1);
+		verticesList.push_back(startFloorVertex);
+		verticesList.push_back(endFloorVertex);
+		verticesList.push_back(startCeilingVertex);
+		verticesList.push_back(endCeilingVertex);
+
+        indices.push_back(baseIndex);
+        indices.push_back(baseIndex + 1);
+        indices.push_back(baseIndex + 2);
+
+        indices.push_back(baseIndex + 1);
+        indices.push_back(baseIndex + 3);
+        indices.push_back(baseIndex + 2);
 	}
-	wallMesh->SetMesh(vertices, indices);
+	// Ajouter le sol et le plafond pour chaque secteur
+	for (int i = 0; i < numSectors; ++i) {
+		Sector& sector = sectors[i];
+
+		std::vector<GLuint> sectorIndices;
+		std::vector<glm::vec3> floorVertices;
+		std::vector<glm::vec3> ceilingVertices;
+
+		// Ajouter les vertices des sols et plafonds du secteur
+		for (int j = 0; j < 4; ++j) {
+			glm::vec3 floorVertex(vertices[j].XPosition / MAPBLOCKUNITS, sector.FloorHeight / MAPBLOCKUNITS, vertices[j].YPosition / MAPBLOCKUNITS);
+			glm::vec3 ceilingVertex(vertices[j].XPosition / MAPBLOCKUNITS, sector.CeilingHeight / MAPBLOCKUNITS, vertices[j].YPosition / MAPBLOCKUNITS);
+
+			floorVertices.push_back(floorVertex);
+			ceilingVertices.push_back(ceilingVertex);
+		}
+
+		GLuint baseIndex = verticesList.size();
+
+		// Ajouter les vertices pour le sol
+		for (const auto& v : floorVertices) {
+			verticesList.push_back({ v, glm::vec3(0.0f, 1.0f, 0.0f), {0.0f, 0.0f}, {0.5f, 0.5f, 0.5f} });
+		}
+
+		// Ajouter les vertices pour le plafond
+		for (const auto& v : ceilingVertices) {
+			verticesList.push_back({ v, glm::vec3(0.0f, -1.0f, 0.0f), {0.0f, 0.0f}, {0.7f, 0.7f, 0.7f} });
+		}
+
+		// Définir les indices pour le sol
+		indices.push_back(baseIndex);
+		indices.push_back(baseIndex + 1);
+		indices.push_back(baseIndex + 2);
+
+		indices.push_back(baseIndex);
+		indices.push_back(baseIndex + 2);
+		indices.push_back(baseIndex + 3);
+
+		// Définir les indices pour le plafond
+		baseIndex += 4;
+		indices.push_back(baseIndex);
+		indices.push_back(baseIndex + 1);
+		indices.push_back(baseIndex + 2);
+
+		indices.push_back(baseIndex);
+		indices.push_back(baseIndex + 2);
+		indices.push_back(baseIndex + 3);
+	}
+
+	wallMesh->SetMesh(verticesList, indices);
 	return wallMesh;
 }
 

@@ -7,7 +7,7 @@
 #include <CassouletEngineLibrarie/Doom/Player.h>
 #include <CassouletEngineLibrarie/OpenGL/Matrix.h>
 
-std::vector<WallSegment> CreateWallSegments(Vertex* vertices, Linedef* linedefs, Sector* sectors, int numLinedefs) {
+std::vector<WallSegment> CreateWallSegments(Linedef * linedefs, Sector* sectors, int numLinedefs) {
 	std::vector<WallSegment> walls;
 
 	for (int i = 0; i < numLinedefs; ++i) {
@@ -17,15 +17,13 @@ std::vector<WallSegment> CreateWallSegments(Vertex* vertices, Linedef* linedefs,
 
 		Sector& sector = sectors[linedef.SectorTag];  // Secteur associé au linedef
 
-		glm::vec3 startFloor(startVertex.XPosition / 100.0f, sector.FloorHeight / 50.f, startVertex.YPosition /50.f);
-		glm::vec3 endFloor(endVertex.XPosition / 100.0f, sector.FloorHeight / 100.0f, endVertex.YPosition / 100.0f);
-		glm::vec3 startCeiling(startVertex.XPosition / 100.0f, sector.CeilingHeight / 100.0f, startVertex.YPosition / 100.0f);
-		glm::vec3 endCeiling(endVertex.XPosition / 100.0f, sector.CeilingHeight / 100.0f, endVertex.YPosition / 100.0f);
-
+		glm::vec3 startFloor(startVertex.XPosition / MAPBLOCKUNITS, sector.FloorHeight / MAPBLOCKUNITS, startVertex.YPosition / MAPBLOCKUNITS);
+		glm::vec3 endFloor(endVertex.XPosition / MAPBLOCKUNITS, sector.FloorHeight / MAPBLOCKUNITS, endVertex.YPosition / MAPBLOCKUNITS);
+		glm::vec3 startCeiling(startVertex.XPosition / MAPBLOCKUNITS, sector.CeilingHeight / MAPBLOCKUNITS, startVertex.YPosition / MAPBLOCKUNITS);
+		glm::vec3 endCeiling(endVertex.XPosition / MAPBLOCKUNITS, sector.CeilingHeight / MAPBLOCKUNITS, endVertex.YPosition / MAPBLOCKUNITS);
 		glm::vec3 normal = glm::normalize(glm::cross(endFloor - startFloor, startCeiling - startFloor));
 
-		walls.push_back({ startFloor, endFloor, normal });
-		walls.push_back({ startCeiling, endCeiling, normal });
+		walls.push_back({ startFloor, endFloor, startCeiling, endCeiling, normal });
 	}
 
 	return walls;
@@ -224,7 +222,7 @@ void Map::BuildSeg()
 void Map::BuildWall()
 {
 	GameObject* obj = new GameObject();
-	m_walls = GameManager::Instance().addComponent<Mesh>(obj->id, Mesh::CreateWall(CreateWallSegments(m_Vertexes.data(), m_Linedefs.data(), m_Sectors.data(), m_Linedefs.size())));
+	m_walls = GameManager::Instance().addComponent<Mesh>(obj->id, Mesh::CreateWall(CreateWallSegments(m_Linedefs.data(), m_Sectors.data(), m_Linedefs.size()),m_Vertexes.data(),m_Sectors.data(),m_Sectors.size()));
 }
 
 void Map::AddVertex(Vertex& v)

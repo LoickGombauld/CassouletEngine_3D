@@ -200,7 +200,7 @@ void Map::BuildSeg()
 void Map::BuildWall()
 {
 	GameObject* obj = new GameObject();
-	m_walls = GameManager::Instance().addComponent<Mesh>(obj->id, Mesh::CreateWall(m_Segs,m_Sectors,m_Vertexes));
+	m_walls = GameManager::Instance().addComponent<Mesh>(obj->id, Mesh::CreateMap(m_Segs,m_Sectors,m_Vertexes,m_Subsector));
 }
 
 void Map::AddVertex(Vertex& v)

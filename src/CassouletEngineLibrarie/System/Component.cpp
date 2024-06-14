@@ -3,11 +3,13 @@
 
 void Component::V_Update()
 {
-	Update();
+	if (enabled)
+		Update();
 }
 
 void Component::V_Draw()
 {
-	Draw();
+	if (enabled)
+		Draw();
 }
 

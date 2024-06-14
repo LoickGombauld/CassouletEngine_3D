@@ -4,19 +4,8 @@
 #include <CassouletEngineLibrarie/OpenGL/FreeCamera.h>
 #include <CassouletEngineLibrarie/System/ViewRender.h>
 
-// Définition des couleurs des vertices
-static const GLfloat colors[] = {
-	1.0f, 0.0f, 0.0f, // Rouge
-	0.0f, 1.0f, 0.0f, // Vert
-	0.0f, 0.0f, 1.0f, // Bleu
-	1.0f, 1.0f, 0.0f, // Jaune
-	1.0f, 0.0f, 0.0f, // Rouge
-	0.0f, 1.0f, 0.0f, // Vert
-	0.0f, 0.0f, 1.0f, // Bleu
-	1.0f, 1.0f, 0.0f  // Jaune
-};
-
-Mesh::Mesh() : VAO(0), VBO(0), EBO(0), m_texture(nullptr), m_isTransparent(false) {
+Mesh::Mesh() : VAO(0), VBO(0), EBO(0), m_texture(nullptr), isTransparent(false), m_meshColor(glm::vec3(1.0f, 1.0f, 1.0f))
+{
 
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -78,7 +67,7 @@ void Mesh::SetTexture(sf::Texture* ptexture, bool isTransparent)
 		delete m_texture;
 	//set new texture
 	m_texture = ptexture;
-	m_isTransparent = isTransparent;
+	isTransparent = isTransparent;
 }
 
 void Mesh::Draw(GLuint shaderProgram, glm::mat4 view, glm::mat4 projection, glm::mat4 model) {
@@ -86,50 +75,66 @@ void Mesh::Draw(GLuint shaderProgram, glm::mat4 view, glm::mat4 projection, glm:
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 }
 
+void Mesh::SetObjectColor(const glm::vec3& color)
+{
+	m_meshColor = color;
+}
+
 void Mesh::Draw()
 {
-	//if texutre is load then bind
+	// if texture is loaded then bind
 	if (m_texture) {
 		sf::Texture::bind(m_texture);
 	}
 
-	//if the mesh does not have any vertices stop here
 	if (!hasVertices)
 		return;
 
-
-	// Configure les matrices de transformation
-	glm::mat4 model = gameObject->transform.GetModelMatrix(); // Vous pouvez également ajouter des transformations spécifiques à l'objet ici
+	glm::mat4 model = gameObject->transform.GetModelMatrix();
 	glUseProgram(shaderID);
+
+	GLint colorLoc = glGetUniformLocation(shaderID, "meshColor");
+	if (colorLoc == -1) {
+		std::cerr << "Warning: meshColor uniform not found in shader." << std::endl;
+	}
+	glUniform3fv(colorLoc, 1, glm::value_ptr(m_meshColor));
+
 	glUniformMatrix4fv(glGetUniformLocation(shaderID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-	// Utilisez les matrices view et projection de la caméra
+
 	m_cam->SetShaderUniforms(shaderID);
 
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
 
-	//disable cullface if we want to draw both sides, else enable it
+	if (doubleSided) {
+		glDisable(GL_CULL_FACE);
+	}
+	else {
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK);
+		glFrontFace(GL_CCW);
+	}
 
-	glDisable(GL_CULL_FACE);
-
-
-	if (m_isTransparent) {
+	if (isTransparent) {
 		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 	else {
 		glDisable(GL_BLEND);
 	}
-
-	// Configurer les attributs de sommet
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+
+	sf::Texture::bind(nullptr);
 }
 
 Mesh* Mesh::CreateCube() {
@@ -161,9 +166,11 @@ Mesh* Mesh::CreateCube() {
 	return cube;
 }
 
-Mesh* Mesh::CreateWall(std::vector<Seg>& segs, std::vector<Sector>& sectors, std::vector<Vertex>& vertices)
+Mesh* Mesh::CreateMap(std::vector<Seg>& segs, std::vector<Sector>& sectors, std::vector<Vertex>& vertices, std::vector<Subsector>& subsectors)
 {
 	Mesh* wallMesh = new Mesh();
+	wallMesh->doubleSided = true;	
+	wallMesh->isTransparent = true;	
 	std::vector<MeshVertex> verticesList;
 	std::vector<GLuint> indices;
 
@@ -202,9 +209,55 @@ Mesh* Mesh::CreateWall(std::vector<Seg>& segs, std::vector<Sector>& sectors, std
 		indices.push_back(baseIndex + 3);
 		indices.push_back(baseIndex + 2);
 	}
+	for (const auto& subsector : subsectors) {
+		Sector* sector = subsector.pSector;
+		if (!sector) continue;
 
+		std::vector<glm::vec3> floorVertices;
+		std::vector<glm::vec3> ceilingVertices;
 
+		for (int i = 0; i < subsector.SegCount; ++i) {
+			Seg& seg = segs[subsector.FirstSegID + i];
+			Vertex* startVertex = seg.pStartVertex;
+			Vertex* endVertex = seg.pEndVertex;
 
+			glm::vec3 floorStart(startVertex->XPosition / MAPBLOCKUNITS, sector->FloorHeight / MAPBLOCKUNITS, startVertex->YPosition / MAPBLOCKUNITS);
+			glm::vec3 floorEnd(endVertex->XPosition / MAPBLOCKUNITS, sector->FloorHeight / MAPBLOCKUNITS, endVertex->YPosition / MAPBLOCKUNITS);
+
+			glm::vec3 ceilingStart(startVertex->XPosition / MAPBLOCKUNITS, sector->CeilingHeight / MAPBLOCKUNITS, startVertex->YPosition / MAPBLOCKUNITS);
+			glm::vec3 ceilingEnd(endVertex->XPosition / MAPBLOCKUNITS, sector->CeilingHeight / MAPBLOCKUNITS, endVertex->YPosition / MAPBLOCKUNITS);
+
+			if (std::find(floorVertices.begin(), floorVertices.end(), floorStart) == floorVertices.end()) {
+				floorVertices.push_back(floorStart);
+				ceilingVertices.push_back(ceilingStart);
+			}
+
+			if (std::find(floorVertices.begin(), floorVertices.end(), floorEnd) == floorVertices.end()) {
+				floorVertices.push_back(floorEnd);
+				ceilingVertices.push_back(ceilingEnd);
+			}
+		}
+
+		GLuint baseIndex = verticesList.size();
+		for (const auto& v : floorVertices) {
+			verticesList.push_back({ v, glm::vec3(0.0f, 1.0f, 0.0f), {0.0f, 0.0f}, {0.5f, 0.5f, 0.5f} });
+		}
+		for (size_t j = 1; j < floorVertices.size() - 1; ++j) {
+			indices.push_back(baseIndex);
+			indices.push_back(baseIndex + j);
+			indices.push_back(baseIndex + j + 1);
+		}
+
+		baseIndex = verticesList.size();
+		for (const auto& v : ceilingVertices) {
+			verticesList.push_back({ v, glm::vec3(0.0f, -1.0f, 0.0f), {0.0f, 0.0f}, {0.7f, 0.7f, 0.7f} });
+		}
+		for (size_t j = 1; j < ceilingVertices.size() - 1; ++j) {
+			indices.push_back(baseIndex);
+			indices.push_back(baseIndex + j);
+			indices.push_back(baseIndex + j + 1);
+		}
+	}
 	wallMesh->SetMesh(verticesList, indices);
 	return wallMesh;
 }

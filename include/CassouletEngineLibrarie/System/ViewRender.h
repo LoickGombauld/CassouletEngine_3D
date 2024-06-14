@@ -2,7 +2,6 @@
 #include <CassouletEngineLibrarie/System/Libs.h>
 
 class Map;
-class Test;
 class Mesh;
 class GameObject;
 class FreeCamera;
@@ -39,5 +38,4 @@ private:
 
 	GameObject* m_objtest;
 	GameObject* m_objtest2;
-	Test* t;
 };

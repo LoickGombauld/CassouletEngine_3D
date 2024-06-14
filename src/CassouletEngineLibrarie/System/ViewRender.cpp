@@ -1,5 +1,4 @@
 #include <CassouletEngineLibrarie/System/ViewRender.h>
-#include <CassouletEngineLibrarie/System/Test.h>
 #include <CassouletEngineLibrarie/System/Imguicpp.h>
 #include <CassouletEngineLibrarie/System/GameObject.h>
 #include <CassouletEngineLibrarie/System/GameManager.h>
@@ -12,13 +11,8 @@
 const char* vertSrc = R"(
 #version 330 core
 layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 aNormal;
-layout (location = 2) in vec2 aTexCoords;
-layout (location = 3) in vec3 aColor;
+layout (location = 1) in vec3 aColor;
 
-out vec3 FragPos;
-out vec3 Normal;
-out vec2 TexCoords;
 out vec3 Color;
 
 uniform mat4 model;
@@ -27,12 +21,8 @@ uniform mat4 projection;
 
 void main()
 {
-    FragPos = vec3(model * vec4(aPos, 1.0));
-    Normal = mat3(transpose(inverse(model))) * aNormal;
-    TexCoords = aTexCoords;
     Color = aColor;
-    
-    gl_Position = projection * view * vec4(FragPos, 1.0);
+    gl_Position = projection * view * model * vec4(aPos, 1.0);
 }
 )";
 
@@ -45,12 +35,12 @@ in vec3 Normal;
 in vec2 TexCoords;
 in vec3 Color;
 
-uniform sampler2D texture1;
+uniform vec3 meshColor ;
 
 void main()
 {
-    vec3 ambient = 0.1 * texture(texture1, TexCoords).rgb;
-    vec3 diffuse = max(dot(Normal, vec3(0.0, 0.0, 1.0)), 0.0) * texture(texture1, TexCoords).rgb;
+    vec3 ambient = 0.1 * meshColor;
+    vec3 diffuse = max(dot(Normal, vec3(0.0, 0.0, 1.0)), 0.0) * meshColor;
     vec3 result = (ambient + diffuse) * Color;
     FragColor = vec4(result, 1.0);
 }
@@ -91,7 +81,7 @@ static GLuint CreateShaderProgram(const char* vertexSrc, const char* fragmentSrc
 		throw std::runtime_error("Program linking failed: " + std::string(infoLog));
 	}
 	glUseProgram(shaderProgram);
-	
+
 
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
@@ -100,10 +90,10 @@ static GLuint CreateShaderProgram(const char* vertexSrc, const char* fragmentSrc
 }
 
 GLuint ViewRender::shaderProgram;
-GLuint ViewRender:: model_location;
-GLuint ViewRender:: view_location;
-GLuint ViewRender:: projection_location;
-GLuint ViewRender:: color_location;
+GLuint ViewRender::model_location;
+GLuint ViewRender::view_location;
+GLuint ViewRender::projection_location;
+GLuint ViewRender::color_location;
 FreeCamera* ViewRender::camera;
 
 ViewRender::ViewRender()
@@ -118,14 +108,12 @@ ViewRender::ViewRender()
 	m_objtest2 = new GameObject();
 
 	m_objtest2->transform.position = glm::vec3(25, 0, 0);
-	t = new Test();
 }
 
 ViewRender::~ViewRender() {
 	glDeleteProgram(shaderProgram);
 	delete(m_objtest);
 	delete(m_objtest2);
-	delete(t);
 	f_Cam.reset();
 }
 
@@ -175,7 +163,6 @@ void ViewRender::UIRender() {
 
 void ViewRender::Render(sf::RenderWindow& window)
 {
-	//t->render3D(window);
 	//GameManager::Instance().DrawAllGameObjects();
 	//m_objtest->Draw();
 	//m_objtest2->Draw();

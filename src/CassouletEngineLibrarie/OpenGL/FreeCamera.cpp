@@ -34,6 +34,7 @@ void FreeCamera::UpdateRotation()
 }
 
 void FreeCamera::InitCamera(int width, int height){
+    glEnable(GL_DEPTH_TEST);
     position = glm::vec3(0.0f, 0.0f, 3.0f);
     target = glm::vec3(0.0f, 0.0f, 0.0f);
     up = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -106,14 +107,8 @@ void FreeCamera::SetShaderUniforms(GLuint shaderProgram) {
     glm::mat4 view = GetViewMatrix();
     glm::mat4 projection = GetProjectionMatrix();
 
-   glUseProgram(shaderProgram);
-
    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-
-   // Ajout de la gestion de la couleur de la caméra
-   glm::vec4 cameraColor = glm::vec4(1.0, 1.0, 1.0, 1.0); // Couleur par défaut, vous pouvez la modifier selon vos besoins
-   glUniform4fv(glGetUniformLocation(shaderProgram, "Color"), 1, glm::value_ptr(cameraColor));
 }
 
 

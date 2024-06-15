@@ -21,13 +21,16 @@ CassouletEngine::~CassouletEngine()
 bool CassouletEngine::Init()
 {
 	sf::ContextSettings settings ;
-	m_window.create(sf::VideoMode(m_iRenderWidth, m_iRenderHeight), m_sAppName, sf::Style::Default,settings);
 	settings.majorVersion = 4;
 	settings.minorVersion = 6;
-	std::cout << "OpenGL version: " << settings.majorVersion << "." << settings.minorVersion << std::endl;
 	settings.depthBits = 24;
 	settings.stencilBits = 8;
 	settings.antialiasingLevel = 4;
+	std::cout << "depth bits:" << settings.depthBits << std::endl;
+	std::cout << "stencil bits:" << settings.stencilBits << std::endl;
+	std::cout << "antialiasing level:" << settings.antialiasingLevel << std::endl;
+	std::cout << "version:" << settings.majorVersion << "." << settings.minorVersion << std::endl;
+	m_window.create(sf::VideoMode(m_iRenderWidth, m_iRenderHeight), m_sAppName, sf::Style::Default,settings);
 	m_window.setActive(true);
 	if (glewInit() != GLEW_OK)
 	{

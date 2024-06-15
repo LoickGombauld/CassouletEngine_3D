@@ -6,6 +6,7 @@
 #include <CassouletEngineLibrarie/OpenGL/Mesh.h>
 #include <CassouletEngineLibrarie/Doom/Player.h>
 #include <CassouletEngineLibrarie/OpenGL/Matrix.h>
+#include <CassouletEngineLibrarie/System/Imguicpp.h>
 
 Map::Map(ViewRender* pViewRender, const std::string& sName, Player* pPlayer, Things* pThings) : m_sName(sName),
 m_XMin(INT_MAX), m_XMax(INT_MIN), m_YMin(INT_MAX), m_YMax(INT_MIN), m_iLumpIndex(-1), m_pPlayer(pPlayer),
@@ -27,7 +28,7 @@ void Map::Init()
 	BuildSidedefs();
 	BuildLinedef();
 	BuildSeg();
-	BuildWall();
+	BuildWalls();
 }
 
 void Map::BuildSectors()
@@ -197,7 +198,7 @@ void Map::BuildSeg()
 	m_pSegs = nullptr;
 }
 
-void Map::BuildWall()
+void Map::BuildWalls()
 {
 	GameObject* obj = new GameObject();
 	m_walls = GameManager::Instance().addComponent<Mesh>(obj->id, Mesh::CreateMap(m_Segs,m_Sectors,m_Vertexes,m_Subsector));
@@ -287,7 +288,7 @@ void Map::Render3DView()
 }
 
 void Map::Render3DTest() {
-	m_walls->Draw();
+	IMGUICPP::DrawVector3Windowf(m_walls->gameObject->transform.position, "Map Position");
 }
 
 void Map::RenderBSPNodes()
@@ -383,7 +384,7 @@ int Map::GetPlayerSubSectorHieght()
 void Map::RenderAutoMap(sf::RenderWindow& pWindow)
 {
 	// Effacer le contenu précédent de la fenêtre
-	glClear(GL_COLOR_BUFFER_BIT);
+	//glClear(GL_COLOR_BUFFER_BIT);
 
 	// Définir la couleur de dessin
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);

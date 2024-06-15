@@ -21,10 +21,87 @@ Mesh::~Mesh()
 	glDeleteBuffers(1, &EBO);
 }
 
+void Mesh::CalculateNormals() {
+	// Initialise toutes les normales à zéro
+	for (auto& vertex : m_vertices) {
+		vertex.Normal = glm::vec3(0.0f);
+	}
+
+	// Calcule les normales des triangles
+	for (size_t i = 0; i < m_indices.size(); i += 3) {
+		GLuint idx0 = m_indices[i];
+		GLuint idx1 = m_indices[i + 1];
+		GLuint idx2 = m_indices[i + 2];
+
+		glm::vec3 v0 = m_vertices[idx0].Position;
+		glm::vec3 v1 = m_vertices[idx1].Position;
+		glm::vec3 v2 = m_vertices[idx2].Position;
+
+		glm::vec3 edge1 = v1 - v0;
+		glm::vec3 edge2 = v2 - v0;
+		glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
+
+		m_vertices[idx0].Normal += normal;
+		m_vertices[idx1].Normal += normal;
+		m_vertices[idx2].Normal += normal;
+	}
+
+	// Normalise les normales des vertices
+	for (auto& vertex : m_vertices) {
+		vertex.Normal = glm::normalize(vertex.Normal);
+	}
+
+	// Initialise toutes les normales à zéro
+	for (auto& vertex : m_vertices) {
+		vertex.Normal = glm::vec3(0.0f);
+	}
+
+	// Calcule les normales des triangles
+	for (size_t i = 0; i < m_indices.size(); i += 3) {
+		GLuint idx0 = m_indices[i];
+		GLuint idx1 = m_indices[i + 1];
+		GLuint idx2 = m_indices[i + 2];
+
+		glm::vec3 v0 = m_vertices[idx0].Position;
+		glm::vec3 v1 = m_vertices[idx1].Position;
+		glm::vec3 v2 = m_vertices[idx2].Position;
+
+		glm::vec3 edge1 = v1 - v0;
+		glm::vec3 edge2 = v2 - v0;
+
+		// Vérifie si les vecteurs des arêtes ne sont pas nuls
+		if (glm::length(edge1) > 0.0f && glm::length(edge2) > 0.0f) {
+			glm::vec3 normal = glm::cross(edge1, edge2);
+
+			// Vérifie si la normale est valide (non nulle)
+			if (glm::length(normal) > 0.0f) {
+				normal = glm::normalize(normal);
+				m_vertices[idx0].Normal += normal;
+				m_vertices[idx1].Normal += normal;
+				m_vertices[idx2].Normal += normal;
+			}
+		}
+	}
+
+	// Normalise les normales des vertices
+	for (auto& vertex : m_vertices) {
+		if (glm::length(vertex.Normal) > 0.0f) {
+			vertex.Normal = glm::normalize(vertex.Normal);
+		}
+		else {
+			vertex.Normal = glm::vec3(0.0f, 1.0f, 0.0f); // Par défaut, une normale vers le haut
+		}
+	}
+}
+
+
 void Mesh::SetMesh(std::vector<MeshVertex>& vertices, std::vector<GLuint>& indices)
 {
 	this->m_vertices = vertices;
 	this->m_indices = indices;
+
+	// Calcul des normales
+	CalculateNormals();
 
 	glBindVertexArray(VAO);
 
@@ -87,6 +164,7 @@ void Mesh::SetObjectColor(const glm::vec3& color)
 
 void Mesh::Draw()
 {
+	glEnable(GL_DEPTH_TEST);
 	// if texture is loaded then bind
 	if (m_texture) {
 		sf::Texture::bind(m_texture);
@@ -97,32 +175,24 @@ void Mesh::Draw()
 
 	glm::mat4 model = gameObject->transform.GetModelMatrix();
 	glUseProgram(shaderID);
-
+	glUniformMatrix4fv(glGetUniformLocation(shaderID, "model"), 1, GL_FALSE, glm::value_ptr(model));
 	GLint colorLoc = glGetUniformLocation(shaderID, "meshColor");
 	if (colorLoc == -1) {
 		std::cerr << "Warning: meshColor uniform not found in shader." << std::endl;
 	}
-	glUniform3fv(colorLoc, 1, glm::value_ptr(m_meshColor));
-
-	glUniformMatrix4fv(glGetUniformLocation(shaderID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-
+	glUniform3fv(colorLoc, 1, glm::value_ptr(m_meshColor));;
 	m_cam->SetShaderUniforms(shaderID);
-
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
 
 	if (doubleSided) {
 		glDisable(GL_CULL_FACE);
 	}
 	else {
 		glEnable(GL_CULL_FACE);
-		glCullFace(GL_BACK);
-		glFrontFace(GL_CCW);
 	}
 
 	if (isTransparent) {
 		glEnable(GL_BLEND);
-		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 	else {
 		glDisable(GL_BLEND);
@@ -130,9 +200,6 @@ void Mesh::Draw()
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
-
-	glDisable(GL_CULL_FACE);
-	glDisable(GL_DEPTH_TEST);
 
 	sf::Texture::bind(nullptr);
 }
@@ -142,19 +209,19 @@ Mesh* Mesh::CreateCube() {
 
 	std::vector<MeshVertex> vertices = {
 		// Positions          // Normals           // Texture Coords
-		{{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}}, // Rouge
-		{{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}}, // Vert
-		{{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}}, // Bleu
-		{{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 1.0f}, {1.0f, 1.0f, 0.0f}}, // Jaune
-		{{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}}, // Rouge
-		{{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}}, // Vert
-		{{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}}, // Bleu
-		{{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f,  1.0f}, {0.0f, 1.0f}, {1.0f, 1.0f, 0.0f}}  // Jaune
+		{{-0.5f, -0.5f, -0.5f}, {0.0f, 0.0f,  1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}}, // Rouge
+		{{ 0.5f, -0.5f, -0.5f}, {0.0f, 0.0f,  1.0f}, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}}, // Vert
+		{{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f,  1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}}, // Bleu
+		{{-0.5f,  0.5f, -0.5f}, {0.0f, 0.0f,  1.0f}, {0.0f, 1.0f}, {1.0f, 1.0f, 0.0f}}, // Jaune
+		{{-0.5f, -0.5f,  0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}}, // Rouge
+		{{ 0.5f, -0.5f,  0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}}, // Vert
+		{{ 0.5f,  0.5f,  0.5f}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}}, // Bleu
+		{{-0.5f,  0.5f,  0.5f}, {0.0f, 0.0f, -1.0f}, {0.0f, 1.0f}, {1.0f, 1.0f, 0.0f}}  // Jaune
 
 	};
 
 	std::vector<GLuint> indices = {
-		0, 1, 3, 1, 2, 3,   // Front face
+	    0, 1, 3, 1, 2, 3,   // Front face
 		4, 5, 7, 5, 6, 7,   // Back face
 		0, 1, 5, 0, 4, 5,   // Bottom face
 		2, 3, 7, 2, 6, 7,   // Top face
@@ -169,10 +236,22 @@ Mesh* Mesh::CreateCube() {
 Mesh* Mesh::CreateMap(std::vector<Seg>& segs, std::vector<Sector>& sectors, std::vector<Vertex>& vertices, std::vector<Subsector>& subsectors)
 {
 	Mesh* wallMesh = new Mesh();
-	wallMesh->doubleSided = true;	
-	wallMesh->isTransparent = true;	
+	wallMesh->doubleSided = true;
+	wallMesh->isTransparent = true;
 	std::vector<MeshVertex> verticesList;
 	std::vector<GLuint> indices;
+
+	std::unordered_map<glm::vec3, GLuint, VertexHasher> uniqueVertices;
+	std::unordered_set<Segment, SegmentHasher> uniqueSegments;
+
+	auto addVertex = [&](const glm::vec3& position, const glm::vec3& normal, const glm::vec2& texCoords, const glm::vec3& color) -> GLuint {
+		if (uniqueVertices.find(position) == uniqueVertices.end()) {
+			MeshVertex vertex = { position, normal, texCoords, color };
+			uniqueVertices[position] = verticesList.size();
+			verticesList.push_back(vertex);
+		}
+		return uniqueVertices[position];
+		};
 
 	// Ajouter les murs au mesh
 	for (const auto& seg : segs) {
@@ -187,77 +266,28 @@ Mesh* Mesh::CreateMap(std::vector<Seg>& segs, std::vector<Sector>& sectors, std:
 		glm::vec3 startCeiling(startVertex->XPosition / MAPBLOCKUNITS, sector->CeilingHeight / MAPBLOCKUNITS, startVertex->YPosition / MAPBLOCKUNITS);
 		glm::vec3 endCeiling(endVertex->XPosition / MAPBLOCKUNITS, sector->CeilingHeight / MAPBLOCKUNITS, endVertex->YPosition / MAPBLOCKUNITS);
 
+		Segment currentSegment = { startFloor, endFloor };
+		if (uniqueSegments.find(currentSegment) != uniqueSegments.end()) {
+			continue; // Segment déjà traité
+		}
+		uniqueSegments.insert(currentSegment);
+
 		glm::vec3 normal = glm::normalize(glm::cross(endFloor - startFloor, startCeiling - startFloor));
 
-		MeshVertex startFloorVertex = { startFloor, normal, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f} };
-		MeshVertex endFloorVertex = { endFloor, normal, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f} };
-		MeshVertex startCeilingVertex = { startCeiling, normal, {0.0f, 1.0f}, {0.0f, 0.0f, 1.0f} };
-		MeshVertex endCeilingVertex = { endCeiling, normal, {1.0f, 1.0f}, {1.0f, 1.0f, 0.0f} };
+		GLuint startFloorIndex = addVertex(startFloor, normal, { 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f });
+		GLuint endFloorIndex = addVertex(endFloor, normal, { 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
+		GLuint startCeilingIndex = addVertex(startCeiling, normal, { 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f });
+		GLuint endCeilingIndex = addVertex(endCeiling, normal, { 1.0f, 1.0f }, { 1.0f, 1.0f, 0.0f });
 
-		GLuint baseIndex = verticesList.size();
+		indices.push_back(startFloorIndex);
+		indices.push_back(endFloorIndex);
+		indices.push_back(startCeilingIndex);
 
-		verticesList.push_back(startFloorVertex);
-		verticesList.push_back(endFloorVertex);
-		verticesList.push_back(startCeilingVertex);
-		verticesList.push_back(endCeilingVertex);
-
-		indices.push_back(baseIndex);
-		indices.push_back(baseIndex + 1);
-		indices.push_back(baseIndex + 2);
-
-		indices.push_back(baseIndex + 1);
-		indices.push_back(baseIndex + 3);
-		indices.push_back(baseIndex + 2);
+		indices.push_back(endFloorIndex);
+		indices.push_back(endCeilingIndex);
+		indices.push_back(startCeilingIndex);
 	}
-	for (const auto& subsector : subsectors) {
-		Sector* sector = subsector.pSector;
-		if (!sector) continue;
 
-		std::vector<glm::vec3> floorVertices;
-		std::vector<glm::vec3> ceilingVertices;
-
-		for (int i = 0; i < subsector.SegCount; ++i) {
-			Seg& seg = segs[subsector.FirstSegID + i];
-			Vertex* startVertex = seg.pStartVertex;
-			Vertex* endVertex = seg.pEndVertex;
-
-			glm::vec3 floorStart(startVertex->XPosition / MAPBLOCKUNITS, sector->FloorHeight / MAPBLOCKUNITS, startVertex->YPosition / MAPBLOCKUNITS);
-			glm::vec3 floorEnd(endVertex->XPosition / MAPBLOCKUNITS, sector->FloorHeight / MAPBLOCKUNITS, endVertex->YPosition / MAPBLOCKUNITS);
-
-			glm::vec3 ceilingStart(startVertex->XPosition / MAPBLOCKUNITS, sector->CeilingHeight / MAPBLOCKUNITS, startVertex->YPosition / MAPBLOCKUNITS);
-			glm::vec3 ceilingEnd(endVertex->XPosition / MAPBLOCKUNITS, sector->CeilingHeight / MAPBLOCKUNITS, endVertex->YPosition / MAPBLOCKUNITS);
-
-			if (std::find(floorVertices.begin(), floorVertices.end(), floorStart) == floorVertices.end()) {
-				floorVertices.push_back(floorStart);
-				ceilingVertices.push_back(ceilingStart);
-			}
-
-			if (std::find(floorVertices.begin(), floorVertices.end(), floorEnd) == floorVertices.end()) {
-				floorVertices.push_back(floorEnd);
-				ceilingVertices.push_back(ceilingEnd);
-			}
-		}
-
-		GLuint baseIndex = verticesList.size();
-		for (const auto& v : floorVertices) {
-			verticesList.push_back({ v, glm::vec3(0.0f, 1.0f, 0.0f), {0.0f, 0.0f}, {0.5f, 0.5f, 0.5f} });
-		}
-		for (size_t j = 1; j < floorVertices.size() - 1; ++j) {
-			indices.push_back(baseIndex);
-			indices.push_back(baseIndex + j);
-			indices.push_back(baseIndex + j + 1);
-		}
-
-		baseIndex = verticesList.size();
-		for (const auto& v : ceilingVertices) {
-			verticesList.push_back({ v, glm::vec3(0.0f, -1.0f, 0.0f), {0.0f, 0.0f}, {0.7f, 0.7f, 0.7f} });
-		}
-		for (size_t j = 1; j < ceilingVertices.size() - 1; ++j) {
-			indices.push_back(baseIndex);
-			indices.push_back(baseIndex + j);
-			indices.push_back(baseIndex + j + 1);
-		}
-	}
 	wallMesh->SetMesh(verticesList, indices);
 	return wallMesh;
 }

@@ -43,7 +43,7 @@ protected:
 	void BuildSidedefs();
 	void BuildLinedef();
 	void BuildSeg();
-	void BuildWall();
+	void BuildWalls();
 	void RenderBSPNodes();
 	void RenderBSPNodes(int iNodeID);
 	void RenderSubsector(int iSubsectorID);

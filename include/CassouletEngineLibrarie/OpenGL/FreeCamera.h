@@ -14,6 +14,7 @@ public:
     void Rotate(float angle, const glm::vec3& axis);
     void RotateAroundTarget(float angle, const glm::vec3& axis);
     void UpdateRotation();
+    void Clear();
 
     void MoveForward(float distance);
     void MoveBackward(float distance);

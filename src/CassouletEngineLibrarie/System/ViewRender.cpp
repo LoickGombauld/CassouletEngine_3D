@@ -39,7 +39,7 @@ uniform vec3 meshColor ;
 
 void main()
 {
-    vec3 ambient = 0.1 * meshColor;
+    vec3 ambient = 1 * meshColor;
     vec3 diffuse = max(dot(Normal, vec3(0.0, 0.0, 1.0)), 0.0) * meshColor;
     vec3 result = (ambient + diffuse) * Color;
     FragColor = vec4(result, 1.0);
@@ -106,7 +106,7 @@ ViewRender::ViewRender()
 	color_location = glGetUniformLocation(shaderProgram, "Color");
 	m_objtest = new GameObject();
 	m_objtest2 = new GameObject();
-
+	GameManager::Instance().addComponent<Mesh>(m_objtest->id, Mesh::CreateCube());
 	m_objtest2->transform.position = glm::vec3(25, 0, 0);
 }
 
@@ -119,11 +119,12 @@ ViewRender::~ViewRender() {
 
 void ViewRender::GLInit(int width, int height)
 {
+
 	if (f_Cam)
 	{
 		f_Cam->SetProjectionSize(width, height);
+		f_Cam->InitCamera(width, height);
 	}
-	f_Cam->InitCamera(width, height);
 	m_screenWidth = width;
 	m_screenHeight = height;
 }
@@ -145,6 +146,7 @@ void ViewRender::UpdateCameraMovement(float dt) {
 
 void ViewRender::Clear()
 {
+	f_Cam->Clear();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -157,13 +159,13 @@ void ViewRender::UIRender() {
 	ImGui::End();
 
 	IMGUICPP::DrawVector3Windowf(m_objtest->transform.position, "Cube 1 Position");
-	IMGUICPP::DrawVector3Windowf(m_objtest2->transform.position, "Cube 2 Position");
+
 	ImGui::End();
 }
 
 void ViewRender::Render(sf::RenderWindow& window)
 {
-	//GameManager::Instance().DrawAllGameObjects();
+	GameManager::Instance().DrawAllGameObjects();
 	//m_objtest->Draw();
 	//m_objtest2->Draw();
 }

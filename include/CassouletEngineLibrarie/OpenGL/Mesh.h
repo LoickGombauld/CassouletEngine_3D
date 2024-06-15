@@ -11,6 +11,31 @@ struct MeshVertex {
 	glm::vec3 Color;
 };
 
+struct VertexHasher {
+	std::size_t operator()(const glm::vec3& vertex) const {
+		return std::hash<float>()(vertex.x) ^ std::hash<float>()(vertex.y) ^ std::hash<float>()(vertex.z);
+	}
+};
+// Structure pour représenter un segment unique
+struct Segment {
+	glm::vec3 start;
+	glm::vec3 end;
+
+	bool operator==(const Segment& other) const {
+		return (start == other.start && end == other.end) ||
+			(start == other.end && end == other.start);
+	}
+};
+
+// Fonction de hachage pour la structure Segment
+struct SegmentHasher {
+	std::size_t operator()(const Segment& segment) const {
+		auto hash1 = std::hash<float>()(segment.start.x) ^ std::hash<float>()(segment.start.y) ^ std::hash<float>()(segment.start.z);
+		auto hash2 = std::hash<float>()(segment.end.x) ^ std::hash<float>()(segment.end.y) ^ std::hash<float>()(segment.end.z);
+		return hash1 ^ hash2;
+	}
+};
+
 class CASSOULET_DLL Mesh : public Component
 {
 public:
@@ -26,6 +51,8 @@ public:
 	static Mesh* CreateQuad();
 	static Mesh* CreateTriangle();
 	static Mesh* CreateSphere(float radius = 1.0f, unsigned int sectorCount = 36, unsigned int stackCount = 18);
+
+	void CalculateNormals();
 
 	void SetMesh(std::vector<MeshVertex>& vertices, std::vector<GLuint>& indices);
 	void SetCam(FreeCamera* pcam);

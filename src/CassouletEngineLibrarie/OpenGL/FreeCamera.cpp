@@ -33,8 +33,20 @@ void FreeCamera::UpdateRotation()
     target = position + direction;
 }
 
+void FreeCamera::Clear()
+{
+    glClearColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
+}
+
 void FreeCamera::InitCamera(int width, int height){
-    glEnable(GL_DEPTH_TEST);
+
+    // Vérifiez si le test de profondeur est activé
+    if (glIsEnabled(GL_DEPTH_TEST)) {
+        std::cout << "Depth test is enabled." << std::endl;
+    }
+    else {
+        std::cout << "Depth test is not enabled." << std::endl;
+    }
     position = glm::vec3(0.0f, 0.0f, 3.0f);
     target = glm::vec3(0.0f, 0.0f, 0.0f);
     up = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -44,12 +56,12 @@ void FreeCamera::InitCamera(int width, int height){
 }
 
 void FreeCamera::SetProjectionSize(int width, int height) {
-    SetProjection(80.0f, width / static_cast<float>(height), 0.1f, 100.0f);
+    SetProjection(90.0f, width / static_cast<float>(height), 0.1f, 1000.f);
 }
 
 
 void FreeCamera::SetProjection(float fov, float aspectRatio, float nearPlane, float farPlane) {
-   projection = glm::perspective(glm::radians(fov), aspectRatio, nearPlane, farPlane);
+    projection = glm::perspective(glm::radians(fov), aspectRatio, nearPlane, farPlane);
 }
 
 glm::vec3 FreeCamera::GetTarget()
@@ -101,12 +113,8 @@ void FreeCamera::MoveRight(float delta) {
 }
 
 void FreeCamera::SetShaderUniforms(GLuint shaderProgram) {
-
     UpdateRotation();
-    glClearColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);	
     glm::mat4 view = GetViewMatrix();
-    glm::mat4 projection = GetProjectionMatrix();
-
    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 }

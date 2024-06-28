@@ -16,7 +16,8 @@ struct VertexHasher {
 		return std::hash<float>()(vertex.x) ^ std::hash<float>()(vertex.y) ^ std::hash<float>()(vertex.z);
 	}
 };
-// Structure pour représenter un segment unique
+
+// Structure pour repr?senter un segment unique
 struct Segment {
 	glm::vec3 start;
 	glm::vec3 end;
@@ -42,12 +43,12 @@ public:
 	// mesh data
 	//true if we want to draw both sides of the mesh
 
+	Mesh(std::vector<MeshVertex>& vertices, std::vector<GLuint>& indices);
 	Mesh();
 
 	Mesh::~Mesh();
 
 	static Mesh* CreateCube();
-	static Mesh* CreateMap(std::vector<Seg>& segs, std::vector<Sector>& sectors, std::vector<Vertex>& vertices, std::vector<Subsector>& subsectors);
 	static Mesh* CreateQuad();
 	static Mesh* CreateTriangle();
 	static Mesh* CreateSphere(float radius = 1.0f, unsigned int sectorCount = 36, unsigned int stackCount = 18);
@@ -56,7 +57,7 @@ public:
 
 	void SetMesh(std::vector<MeshVertex>& vertices, std::vector<GLuint>& indices);
 	void SetCam(FreeCamera* pcam);
-
+	void AddVertex(MeshVertex& vertices);
 	void Draw();
 	void Draw(GLuint shaderProgram, glm::mat4 view, glm::mat4 projection, glm::mat4 model);
 	void SetObjectColor(const glm::vec3& color);

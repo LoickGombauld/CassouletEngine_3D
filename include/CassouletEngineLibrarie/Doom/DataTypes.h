@@ -7,9 +7,7 @@
 // The node ID is stored as uint16
 // 0x8000 in binary 1000000000000000
 #define SUBSECTORIDENTIFIER 0x8000
-const float SCALE = 2.5f;
-
-const float MAPBLOCKUNITS = 100.f;
+const float SCALE = 120.f;
 
 inline int FixedDiv(int16_t a, int16_t b)
 {
@@ -154,30 +152,29 @@ struct Seg
 
 struct Subsector
 {
-	Sector* pSector;
 	uint16_t SegCount;
 	uint16_t FirstSegID;
 };
 
 struct Node
 {
-	int16_t XPartition;
-	int16_t YPartition;
-	int16_t ChangeXPartition;
-	int16_t ChangeYPartition;
+    int16_t XPartition;
+    int16_t YPartition;
+    int16_t ChangeXPartition;
+    int16_t ChangeYPartition;
 
-	int16_t RightBoxTop;
-	int16_t RightBoxBottom;
-	int16_t RightBoxLeft;
-	int16_t RightBoxRight;
+    int16_t RightBoxTop;
+    int16_t RightBoxBottom;
+    int16_t RightBoxLeft;
+    int16_t RightBoxRight;
 
-	int16_t LeftBoxTop;
-	int16_t LeftBoxBottom;
-	int16_t LeftBoxLeft;
-	int16_t LeftBoxRight;
+    int16_t LeftBoxTop;
+    int16_t LeftBoxBottom;
+    int16_t LeftBoxLeft;
+    int16_t LeftBoxRight;
 
-	uint16_t RightChildID;
-	uint16_t LeftChildID;
+    uint16_t RightChildID;
+    uint16_t LeftChildID;
 };
 
 struct WADLinedef

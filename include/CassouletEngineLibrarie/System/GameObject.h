@@ -3,6 +3,7 @@
 #include <CassouletEngineLibrarie/Math/Transform.h>
 
 class ComponentManager;
+class Component;
 
 class CASSOULET_DLL  GameObject
 {
@@ -32,6 +33,11 @@ public:
 
 	//returns the distance to the active camera
 	float GetDistanceToCamera() const;
+
+
+	void AddComponent(Component* component);
+
+	void GetComponent(Component* component);
 
 private:
 

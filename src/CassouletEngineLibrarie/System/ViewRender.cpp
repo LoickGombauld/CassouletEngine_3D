@@ -6,6 +6,7 @@
 #include <CassouletEngineLibrarie/OpenGL/FreeCamera.h>
 #include <CassouletEngineLibrarie/OpenGL/Mesh.h>
 #include <CassouletEngineLibrarie/System/CassouletEngine.h>
+#include <CassouletEngineLibrarie/Doom/Angle.h>
 #include <CassouletEngineLibrarie/Math/Vector2.h>
 
 const char* vertSrc = R"(
@@ -106,7 +107,7 @@ ViewRender::ViewRender()
 	color_location = glGetUniformLocation(shaderProgram, "Color");
 	m_objtest = new GameObject();
 	m_objtest2 = new GameObject();
-	GameManager::Instance().addComponent<Mesh>(m_objtest->id, Mesh::CreateCube());
+	GameManager::Instance().AddComponent<Mesh>(m_objtest->id, Mesh::CreateCube());
 	m_objtest2->transform.position = glm::vec3(25, 0, 0);
 }
 
@@ -119,7 +120,6 @@ ViewRender::~ViewRender() {
 
 void ViewRender::GLInit(int width, int height)
 {
-
 	if (f_Cam)
 	{
 		f_Cam->SetProjectionSize(width, height);
@@ -163,13 +163,21 @@ void ViewRender::UIRender() {
 	ImGui::End();
 }
 
-void ViewRender::Render(sf::RenderWindow& window)
+void ViewRender::SetMap(Map* map)
 {
-	GameManager::Instance().DrawAllGameObjects();
-	//m_objtest->Draw();
-	//m_objtest2->Draw();
+	m_pmap = map;
 }
 
+void ViewRender::InitFrame() {
+
+}
+
+void ViewRender::Render(sf::RenderWindow& window)
+{
+	m_objtest->Draw();
+	InitFrame();
+	m_pmap->Render3DView();
+}
 
 static bool checkShader(GLuint shader)
 {

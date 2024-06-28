@@ -27,9 +27,13 @@ float GameObject::GetDistanceToCamera() const
 	return distanceToCamera;
 }
 
-
+void GameObject::AddComponent(Component* component)
+{
+	GameManager::Instance().AddComponent(id, component);
+}
 
 GameObject::~GameObject()
 {
+	delete(manager);
 	GameManager::Instance().destroyEntity(id);
 }

@@ -5,7 +5,7 @@
 
 WADLoader::WADLoader() : m_pWADData(nullptr)
 {
-	m_sWADFilePath = std::filesystem::path("Resources/Map/DOOM1.WAD").string();
+	m_sWADFilePath = std::filesystem::path("Resources/DOOM1.WAD").string();
 }
 
 WADLoader::~WADLoader()
@@ -140,7 +140,7 @@ bool WADLoader::LoadMapData(Map* pMap)
 		std::cout << "Error: Failed to load map subsectors data MAP: " << pMap->GetName() << std::endl;
 		return false;
 	}
-	std::cout << "Info: Processing Block Map" << std::endl;
+	//std::cout << "Info: Processing Block Map" << std::endl;
 	//if (!ReadBlockMap(pMap))
 	//{
 	//	std::cout << "Error: Failed to load map block data MAP: " << pMap->GetName() << std::endl;

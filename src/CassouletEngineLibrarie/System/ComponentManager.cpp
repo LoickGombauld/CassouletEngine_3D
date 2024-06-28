@@ -7,7 +7,6 @@ ComponentManager::~ComponentManager()
 	std::unordered_map<std::string, Component*>::iterator com = m_ComponentManagers.begin();
 	while (com != m_ComponentManagers.end())
 	{
-		if (com->second->enabled)
 		 delete	com->second;
 		com++;
 	}

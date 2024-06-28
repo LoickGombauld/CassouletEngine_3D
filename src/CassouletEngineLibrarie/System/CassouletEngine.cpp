@@ -54,9 +54,10 @@ bool CassouletEngine::Init()
 
 	ReadDataFromWAD();
 
+	m_pViewRender->GLInit(m_iRenderWidth, m_iRenderHeight);
+	m_pViewRender->SetMap(m_pMap.get());
 	m_pPlayer->Init((m_pMap->GetThings())->GetThingByID(m_pPlayer->GetID()));
 	m_pMap->Init();
-	m_pViewRender->GLInit(m_iRenderWidth, m_iRenderHeight);
 
 	return true;
 }
@@ -70,7 +71,7 @@ void CassouletEngine::LoadWAD()
 std::string CassouletEngine::GetWADFileName()
 {
 
-	return std::filesystem::path("Resources/Map/DOOM1.WAD").string();
+	return std::filesystem::path("Resources/DOOM1.WAD").string();
 }
 
 void CassouletEngine::Render()
@@ -78,7 +79,6 @@ void CassouletEngine::Render()
 	m_pViewRender->Clear();
 	m_pViewRender->UIRender();
 	m_pViewRender->Render(m_window);
-	m_pMap->Render3DTest();
 	ImGui::SFML::Render(m_window);
 	m_window.display();
 

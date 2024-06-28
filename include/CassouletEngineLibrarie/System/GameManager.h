@@ -15,7 +15,6 @@ public:
 	GameManager(const GameManager&) = delete;
 	GameManager& operator=(const GameManager&) = delete;
 
-
 	void createEntity(GameObject* obj);
 
 	void destroyEntity(entt::entity& entity);
@@ -37,7 +36,7 @@ public:
 
 
 	template <class T>
-	typename std::enable_if<std::is_base_of<Component, T>::value, T*>::type addComponent(entt::entity& entity, T* component)
+	typename std::enable_if<std::is_base_of<Component, T>::value, T*>::type AddComponent(entt::entity& entity, T* component)
 	{
 		component->gameObject = getGameObject(entity);
 
@@ -53,7 +52,7 @@ public:
 
 
 	template <class T>
-	typename std::enable_if<std::is_base_of<Component, T>::value, T*>::type addComponent(entt::entity& entity)
+	typename std::enable_if<std::is_base_of<Component, T>::value, T*>::type AddComponent(entt::entity& entity)
 	{
 		T* component = new T();
 		component->gameObject = getGameObject(entity);

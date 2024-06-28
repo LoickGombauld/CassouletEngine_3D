@@ -1,8 +1,23 @@
 #include <CassouletEngineLibrarie/OpenGL/Mesh.h>
 #include <CassouletEngineLibrarie/System/GameObject.h>
-
+#include <CassouletEngineLibrarie/System/GameManager.h>
 #include <CassouletEngineLibrarie/OpenGL/FreeCamera.h>
 #include <CassouletEngineLibrarie/System/ViewRender.h>
+
+glm::vec3 get_random_color(const void* seed) {
+	srand((uintptr_t)seed);
+	return glm::normalize(glm::vec3((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX));
+}
+
+Mesh::Mesh(std::vector<MeshVertex>& vertices, std::vector<GLuint>& indices)
+{
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &EBO);
+	shaderID = ViewRender::shaderProgram;
+	m_cam = ViewRender::camera;
+	SetMesh(vertices, indices);
+}
 
 Mesh::Mesh() : VAO(0), VBO(0), EBO(0), m_texture(nullptr), isTransparent(false), m_meshColor(glm::vec3(1.0f, 1.0f, 1.0f))
 {
@@ -97,6 +112,8 @@ void Mesh::CalculateNormals() {
 
 void Mesh::SetMesh(std::vector<MeshVertex>& vertices, std::vector<GLuint>& indices)
 {
+	this->m_vertices.clear();
+	this->m_indices.clear();
 	this->m_vertices = vertices;
 	this->m_indices = indices;
 
@@ -135,6 +152,11 @@ void Mesh::SetMesh(std::vector<MeshVertex>& vertices, std::vector<GLuint>& indic
 void Mesh::SetCam(FreeCamera* pcam)
 {
 	m_cam = pcam;
+}
+
+void Mesh::AddVertex(MeshVertex& vertices)
+{
+	m_vertices.push_back(vertices);
 }
 
 
@@ -221,7 +243,7 @@ Mesh* Mesh::CreateCube() {
 	};
 
 	std::vector<GLuint> indices = {
-	    0, 1, 3, 1, 2, 3,   // Front face
+		0, 1, 3, 1, 2, 3,   // Front face
 		4, 5, 7, 5, 6, 7,   // Back face
 		0, 1, 5, 0, 4, 5,   // Bottom face
 		2, 3, 7, 2, 6, 7,   // Top face
@@ -231,65 +253,6 @@ Mesh* Mesh::CreateCube() {
 
 	cube->SetMesh(vertices, indices);
 	return cube;
-}
-
-Mesh* Mesh::CreateMap(std::vector<Seg>& segs, std::vector<Sector>& sectors, std::vector<Vertex>& vertices, std::vector<Subsector>& subsectors)
-{
-	Mesh* wallMesh = new Mesh();
-	wallMesh->doubleSided = true;
-	wallMesh->isTransparent = true;
-	std::vector<MeshVertex> verticesList;
-	std::vector<GLuint> indices;
-
-	std::unordered_map<glm::vec3, GLuint, VertexHasher> uniqueVertices;
-	std::unordered_set<Segment, SegmentHasher> uniqueSegments;
-
-	auto addVertex = [&](const glm::vec3& position, const glm::vec3& normal, const glm::vec2& texCoords, const glm::vec3& color) -> GLuint {
-		if (uniqueVertices.find(position) == uniqueVertices.end()) {
-			MeshVertex vertex = { position, normal, texCoords, color };
-			uniqueVertices[position] = verticesList.size();
-			verticesList.push_back(vertex);
-		}
-		return uniqueVertices[position];
-		};
-
-	// Ajouter les murs au mesh
-	for (const auto& seg : segs) {
-		Vertex* startVertex = seg.pStartVertex;
-		Vertex* endVertex = seg.pEndVertex;
-		Sector* sector = seg.pRightSector ? seg.pRightSector : seg.pLeftSector;
-
-		if (!startVertex || !endVertex || !sector) continue;
-
-		glm::vec3 startFloor(startVertex->XPosition / MAPBLOCKUNITS, sector->FloorHeight / MAPBLOCKUNITS, startVertex->YPosition / MAPBLOCKUNITS);
-		glm::vec3 endFloor(endVertex->XPosition / MAPBLOCKUNITS, sector->FloorHeight / MAPBLOCKUNITS, endVertex->YPosition / MAPBLOCKUNITS);
-		glm::vec3 startCeiling(startVertex->XPosition / MAPBLOCKUNITS, sector->CeilingHeight / MAPBLOCKUNITS, startVertex->YPosition / MAPBLOCKUNITS);
-		glm::vec3 endCeiling(endVertex->XPosition / MAPBLOCKUNITS, sector->CeilingHeight / MAPBLOCKUNITS, endVertex->YPosition / MAPBLOCKUNITS);
-
-		Segment currentSegment = { startFloor, endFloor };
-		if (uniqueSegments.find(currentSegment) != uniqueSegments.end()) {
-			continue; // Segment déjà traité
-		}
-		uniqueSegments.insert(currentSegment);
-
-		glm::vec3 normal = glm::normalize(glm::cross(endFloor - startFloor, startCeiling - startFloor));
-
-		GLuint startFloorIndex = addVertex(startFloor, normal, { 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f });
-		GLuint endFloorIndex = addVertex(endFloor, normal, { 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
-		GLuint startCeilingIndex = addVertex(startCeiling, normal, { 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f });
-		GLuint endCeilingIndex = addVertex(endCeiling, normal, { 1.0f, 1.0f }, { 1.0f, 1.0f, 0.0f });
-
-		indices.push_back(startFloorIndex);
-		indices.push_back(endFloorIndex);
-		indices.push_back(startCeilingIndex);
-
-		indices.push_back(endFloorIndex);
-		indices.push_back(endCeilingIndex);
-		indices.push_back(startCeilingIndex);
-	}
-
-	wallMesh->SetMesh(verticesList, indices);
-	return wallMesh;
 }
 
 Mesh* Mesh::CreateQuad() {

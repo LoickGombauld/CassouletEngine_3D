@@ -30,8 +30,4 @@ public:
     void Read8Characters(const uint8_t* pWADData, int offset, char* pName);
 
     int ReadPatchColumn(const uint8_t* pWADData, int offset, PatchColumnData& patch);
-
-protected:
-    uint16_t Read2Bytes(const uint8_t* pWADData, int offset);
-    uint32_t Read4Bytes(const uint8_t* pWADData, int offset);
 };

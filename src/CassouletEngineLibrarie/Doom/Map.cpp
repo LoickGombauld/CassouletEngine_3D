@@ -1,4 +1,4 @@
-#include <CassouletEngineLibrarie/Doom/Map.h>
+ï»¿#include <CassouletEngineLibrarie/Doom/Map.h>
 #include <CassouletEngineLibrarie/System/ViewRender.h>
 #include <CassouletEngineLibrarie/System/GameManager.h>
 #include <CassouletEngineLibrarie/System/GameObject.h>
@@ -7,10 +7,11 @@
 #include <CassouletEngineLibrarie/Doom/Player.h>
 #include <CassouletEngineLibrarie/OpenGL/Matrix.h>
 #include <CassouletEngineLibrarie/System/Imguicpp.h>
+#include <CassouletEngineLibrarie/OpenGL/FreeCamera.h>
 
 Map::Map(ViewRender* pViewRender, const std::string& sName, Player* pPlayer, Things* pThings) : m_sName(sName),
 m_XMin(INT_MAX), m_XMax(INT_MIN), m_YMin(INT_MAX), m_YMax(INT_MIN), m_iLumpIndex(-1), m_pPlayer(pPlayer),
-m_pThings(pThings), m_pViewRender(pViewRender)
+m_pThings(pThings), m_pViewRender(pViewRender), m_camera(ViewRender::camera)
 {
 	m_pSectors = new std::vector<WADSector>();
 	m_pSidedefs = new std::vector<WADSidedef>();
@@ -20,16 +21,44 @@ m_pThings(pThings), m_pViewRender(pViewRender)
 
 Map::~Map()
 {
+	ClearMeshes();
 }
 
 void Map::Init()
 {
+	m_camera->position = glm::vec3(m_pThings->GetThingByID(1).XPosition / SCALE, 1, m_pThings->GetThingByID(1).YPosition / SCALE);
+	LoadVertices();
 	BuildSectors();
+	RescaleSectors();
 	BuildSidedefs();
 	BuildLinedef();
 	BuildSeg();
 	BuildWalls();
 }
+
+void Map::LoadVertices() {
+	// ImplÃ©mentation du chargement des Vertex
+	for (auto& vertex : m_Vertexes) {
+		vertex.XPosition /= SCALE;
+		vertex.YPosition /= SCALE;
+	}
+	for (auto& node : m_Nodes)
+	{
+		node.ChangeXPartition /= SCALE;
+		node.ChangeYPartition /= SCALE;
+		node.XPartition /= SCALE;
+		node.YPartition /= SCALE;
+	}
+}
+
+void Map::RescaleSectors() {
+	// ImplÃ©mentation du chargement des Sectors
+	for (auto& sector : m_Sectors) {
+		sector.FloorHeight = static_cast<int16_t>(sector.FloorHeight / SCALE);
+		sector.CeilingHeight = static_cast<int16_t>(sector.CeilingHeight / SCALE);
+	}
+}
+
 
 void Map::BuildSectors()
 {
@@ -52,6 +81,8 @@ void Map::BuildSectors()
 	delete m_pSectors;
 	m_pSectors = nullptr;
 }
+
+
 
 void Map::BuildSidedefs()
 {
@@ -108,38 +139,10 @@ void Map::BuildLinedef()
 		{
 			linedef.pLeftSidedef = &m_Sidedefs[wadlinedef.LeftSidedef];
 		}
-
-		//auto start = *linedef.pStartVertex;
-		//auto end = *linedef.pEndVertex;
-
-		//start.XPosition /= MAPBLOCKUNITS;
-		//start.YPosition /= MAPBLOCKUNITS;
-		//end.XPosition /= MAPBLOCKUNITS;
-		//end.YPosition /= MAPBLOCKUNITS;
-
-		//float x = linedef.dx / static_cast<float>(MAPBLOCKUNITS);
-		//float y = linedef.dy / static_cast<float>(MAPBLOCKUNITS);
-		//float length = sqrtf(x * x + y * y);
-		//float angle = atan2f(y, x); // Note: atan2f(y, x) to match the example's calculation
-
-		//glm::vec3 position(start.XPosition, 0.0f, start.YPosition);
-		//glm::vec3 scale(length, 1.0f, 1.0f); // Adjust scale.y as needed
-		//glm::vec3 rotation(0.0f, glm::radians(angle), 0.0f);
-
-
-		//glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), position);
-		//glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
-		//glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scale);
-
-		//// Combine the transformations: scale -> rotate -> translate
-		//glm::mat4 modelMatrix = translationMatrix * rotationMatrix * scaleMatrix;
-
-		//// Apply the transformation to the object's transform
-		//obj->transform.SetTransform(modelMatrix);
-
 		m_Linedefs.push_back(linedef);
 	}
 	delete m_pLinedefs;
+	m_pLinedefs = nullptr;
 }
 
 void Map::BuildSeg()
@@ -200,8 +203,14 @@ void Map::BuildSeg()
 
 void Map::BuildWalls()
 {
-	GameObject* obj = new GameObject();
-	m_walls = GameManager::Instance().addComponent<Mesh>(obj->id, Mesh::CreateMap(m_Segs,m_Sectors,m_Vertexes,m_Subsector));
+	InitSectorsMesh();
+}
+
+void Map::ClearMeshes() {
+	for (std::map<int, Mesh*>::iterator itr = m_SubsectorMeshes.begin(); itr != m_SubsectorMeshes.end(); itr++)
+	{
+		delete (itr->second);
+	}
 }
 
 void Map::AddVertex(Vertex& v)
@@ -269,7 +278,7 @@ void Map::AddNode(Node& node)
 
 void Map::AddSubsector(Subsector& subsector)
 {
-	m_Subsector.push_back(subsector);
+	m_Subsectors.push_back(subsector);
 }
 
 void Map::AddSeg(WADSeg& seg)
@@ -287,10 +296,6 @@ void Map::Render3DView()
 	RenderBSPNodes();
 }
 
-void Map::Render3DTest() {
-	IMGUICPP::DrawVector3Windowf(m_walls->gameObject->transform.position, "Map Position");
-}
-
 void Map::RenderBSPNodes()
 {
 	RenderBSPNodes(m_Nodes.size() - 1);
@@ -306,7 +311,7 @@ void Map::RenderBSPNodes(int iNodeID)
 		return;
 	}
 
-	bool isOnLeft = IsPointOnLeftSide(m_pPlayer->GetXPosition(), m_pPlayer->GetYPosition(), iNodeID);
+	bool isOnLeft = IsPointOnLeftSide(m_camera->position.x, m_camera->position.y, iNodeID);
 
 	if (isOnLeft)
 	{
@@ -320,19 +325,111 @@ void Map::RenderBSPNodes(int iNodeID)
 	}
 }
 
+
+
+void Map::InitSectorsMesh() {
+	// Clear previous meshes if any
+	// ClearMeshes();
+
+	for (const auto& subsector : m_Subsectors) {
+		std::vector<MeshVertex> vertices;
+		std::vector<unsigned int> indices;
+		size_t vertexOffset = 0;
+
+		// Add walls to the mesh
+		for (int i = 0; i < subsector.SegCount; ++i) {
+			const Seg& seg = m_Segs[subsector.FirstSegID + i];
+			Vertex* startVertex = seg.pStartVertex;
+			Vertex* endVertex = seg.pEndVertex;
+			Sector* sector = seg.pRightSector ? seg.pRightSector : seg.pLeftSector;
+
+			if (!startVertex || !endVertex || !sector) continue;
+
+			glm::vec3 startFloor(startVertex->XPosition, sector->FloorHeight, startVertex->YPosition);
+			glm::vec3 endFloor(endVertex->XPosition, sector->FloorHeight, endVertex->YPosition);
+			glm::vec3 startCeiling(startVertex->XPosition, sector->CeilingHeight, startVertex->YPosition);
+			glm::vec3 endCeiling(endVertex->XPosition, sector->CeilingHeight, endVertex->YPosition);
+
+			glm::vec3 normal = glm::normalize(glm::cross(endFloor - startFloor, startCeiling - startFloor));
+
+			MeshVertex startFloorVertex = { startFloor, normal, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f} };
+			MeshVertex endFloorVertex = { endFloor, normal, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f} };
+			MeshVertex startCeilingVertex = { startCeiling, normal, {0.0f, 1.0f}, {0.0f, 0.0f, 1.0f} };
+			MeshVertex endCeilingVertex = { endCeiling, normal, {1.0f, 1.0f}, {1.0f, 1.0f, 0.0f} };
+
+			vertices.push_back(startFloorVertex);
+			vertices.push_back(endFloorVertex);
+			vertices.push_back(startCeilingVertex);
+			vertices.push_back(endCeilingVertex);
+
+			indices.push_back(vertexOffset + 0);
+			indices.push_back(vertexOffset + 1);
+			indices.push_back(vertexOffset + 2);
+
+			indices.push_back(vertexOffset + 1);
+			indices.push_back(vertexOffset + 3);
+			indices.push_back(vertexOffset + 2);
+
+			vertexOffset += 4;
+		}
+
+		// Add horizontal surfaces (floor and ceiling)
+		if (!vertices.empty()) {
+			std::vector<glm::vec3> floorVerticesPos;
+			std::vector<glm::vec3> ceilingVerticesPos;
+
+			for (int i = 0; i < subsector.SegCount; ++i) {
+				const Seg& seg = m_Segs[subsector.FirstSegID + i];
+				Vertex* startVertex = seg.pStartVertex;
+				Vertex* endVertex = seg.pEndVertex;
+				Sector* sector = seg.pRightSector ? seg.pRightSector : seg.pLeftSector;
+
+				if (!startVertex || !endVertex || !sector) continue;
+
+				floorVerticesPos.push_back({ startVertex->XPosition, sector->FloorHeight, startVertex->YPosition });
+				floorVerticesPos.push_back({ endVertex->XPosition, sector->FloorHeight, endVertex->YPosition });
+				ceilingVerticesPos.push_back({ startVertex->XPosition, sector->CeilingHeight, startVertex->YPosition });
+				ceilingVerticesPos.push_back({ endVertex->XPosition, sector->CeilingHeight, endVertex->YPosition });
+			}
+
+			size_t floorStart = vertexOffset;
+			size_t ceilingStart = vertexOffset + floorVerticesPos.size();
+
+			// Triangulate the floor
+			for (size_t i = 1; i < floorVerticesPos.size() - 1; ++i) {
+				indices.push_back(floorStart);
+				indices.push_back(floorStart + i);
+				indices.push_back(floorStart + i + 1);
+			}
+
+			// Triangulate the ceiling
+			for (size_t i = 1; i < ceilingVerticesPos.size() - 1; ++i) {
+				indices.push_back(ceilingStart);
+				indices.push_back(ceilingStart + i + 1);
+				indices.push_back(ceilingStart + i);
+			}
+
+			for (const auto& v : floorVerticesPos) {
+				vertices.push_back({ v, {0, 1, 0}, {0, 0}, {1, 0, 0} });
+			}
+			for (const auto& v : ceilingVerticesPos) {
+				vertices.push_back({ v, {0, -1, 0}, {0, 0}, {0, 1, 0} });
+			}
+
+			vertexOffset += floorVerticesPos.size() + ceilingVerticesPos.size();
+		}
+
+		GameObject* obj = new GameObject();
+		m_SubsectorMeshes[subsector.FirstSegID] = new Mesh(vertices, indices);
+		m_SubsectorMeshes[subsector.FirstSegID]->doubleSided = true;
+		obj->AddComponent(m_SubsectorMeshes[subsector.FirstSegID]);
+	}
+}
+
+
 void Map::RenderSubsector(int iSubsectorID)
 {
-	Subsector& subsector = m_Subsector[iSubsectorID];
-
-	for (int i = 0; i < subsector.SegCount; i++)
-	{
-		Seg& seg = m_Segs[subsector.FirstSegID + i];
-		Angle V1Angle, V2Angle, V1AngleFromPlayer, V2AngleFromPlayer;
-		//if (m_pPlayer->ClipVertexesInFOV(*(seg.pStartVertex), *(seg.pEndVertex), V1Angle, V2Angle, V1AngleFromPlayer, V2AngleFromPlayer))
-		//{
-		//    m_pViewRenderer->AddWallInFOV(seg, V1Angle, V2Angle, V1AngleFromPlayer, V2AngleFromPlayer);
-		//}
-	}
+	m_SubsectorMeshes[m_Subsectors[iSubsectorID].FirstSegID]->Draw();
 }
 
 bool Map::IsPointOnLeftSide(int XPosition, int YPosition, int iNodeID)
@@ -358,13 +455,14 @@ Things* Map::GetThings()
 	return m_pThings;
 }
 
-int Map::GetPlayerSubSectorHieght()
+int Map::GetPlayerSubSectorHeight()
 {
 	int iSubsectorID = m_Nodes.size() - 1;
 	while (!(iSubsectorID & SUBSECTORIDENTIFIER))
 	{
 
-		bool isOnLeft = IsPointOnLeftSide(m_pPlayer->GetXPosition(), m_pPlayer->GetYPosition(), iSubsectorID);
+		//	bool isOnLeft = IsPointOnLeftSide(m_pPlayer->GetXPosition(), m_pPlayer->GetYPosition(), iSubsectorID);
+		bool isOnLeft = IsPointOnLeftSide(m_camera->position.x, m_camera->position.y, iSubsectorID);
 
 		if (isOnLeft)
 		{
@@ -375,7 +473,7 @@ int Map::GetPlayerSubSectorHieght()
 			iSubsectorID = m_Nodes[iSubsectorID].RightChildID;
 		}
 	}
-	Subsector& subsector = m_Subsector[iSubsectorID & (~SUBSECTORIDENTIFIER)];
+	Subsector& subsector = m_Subsectors[iSubsectorID & (~SUBSECTORIDENTIFIER)];
 	Seg& seg = m_Segs[subsector.FirstSegID];
 	return seg.pRightSector->FloorHeight;
 
@@ -383,10 +481,10 @@ int Map::GetPlayerSubSectorHieght()
 
 void Map::RenderAutoMap(sf::RenderWindow& pWindow)
 {
-	// Effacer le contenu précédent de la fenêtre
+	// Effacer le contenu prÃ©cÃ©dent de la fenÃªtre
 	//glClear(GL_COLOR_BUFFER_BIT);
 
-	// Définir la couleur de dessin
+	// DÃ©finir la couleur de dessin
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
 	//Imgui
@@ -400,7 +498,7 @@ void Map::RenderAutoMap(sf::RenderWindow& pWindow)
 		Vertex vStart = *l.pStartVertex;
 		Vertex vEnd = *l.pEndVertex;
 
-		// Dessiner la ligne avec les coordonnées transformées
+		// Dessiner la ligne avec les coordonnÃ©es transformÃ©es
 		glVertex2f((vStart.XPosition) / m_iAutoMapScaleFactor, (vStart.YPosition) / m_iAutoMapScaleFactor);
 		glVertex2f((vEnd.XPosition) / m_iAutoMapScaleFactor, (vEnd.YPosition) / m_iAutoMapScaleFactor);
 	}

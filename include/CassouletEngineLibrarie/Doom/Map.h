@@ -7,6 +7,7 @@ class ViewRender;
 class Things;
 class GameObject;
 class Mesh;
+class FreeCamera;
 
 
 class CASSOULET_DLL Map
@@ -24,12 +25,16 @@ public:
 	void AddSidedef(WADSidedef& sidedef);
 	void AddSector(WADSector& sector);
 	void Render3DView();
-	void Render3DTest();
+
+	void Render();
+	
 	void RenderAutoMap(sf::RenderWindow& pWindow);
 	void SetLumpIndex(int iIndex);
 	void Init();
 
-	int GetPlayerSubSectorHieght();
+	void LoadVertices();
+
+	int GetPlayerSubSectorHeight();
 	int GetXMin();
 	int GetXMax();
 	int GetYMin();
@@ -40,12 +45,15 @@ public:
 
 protected:
 	void BuildSectors();
+	void RescaleSectors();
 	void BuildSidedefs();
 	void BuildLinedef();
 	void BuildSeg();
 	void BuildWalls();
+	void ClearMeshes();
 	void RenderBSPNodes();
 	void RenderBSPNodes(int iNodeID);
+	void InitSectorsMesh();
 	void RenderSubsector(int iSubsectorID);
 
 	bool IsPointOnLeftSide(int XPosition, int YPosition, int iNodeID);
@@ -57,7 +65,7 @@ protected:
 	std::vector<Sidedef> m_Sidedefs;
 	std::vector<Linedef> m_Linedefs;
 	std::vector<Seg> m_Segs;
-	std::vector<Subsector> m_Subsector;
+	std::vector<Subsector> m_Subsectors;
 	std::vector<Node> m_Nodes;
 
 
@@ -78,5 +86,7 @@ protected:
 	Things* m_pThings;
 	ViewRender* m_pViewRender;
 
-	Mesh* m_walls;
+	FreeCamera* m_camera;
+
+	std::map<int, Mesh*> m_SubsectorMeshes;
 };

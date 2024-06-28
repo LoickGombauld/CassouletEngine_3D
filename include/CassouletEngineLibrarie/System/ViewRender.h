@@ -7,6 +7,8 @@ class GameObject;
 class FreeCamera;
 class Camera;
 class Vector2;
+class Angle;
+class Seg;
 
 class CASSOULET_DLL ViewRender {
 
@@ -19,8 +21,10 @@ public:
 	void Clear();
 	void Update();
 	void UpdateResize(int width, int height);
+	void InitFrame();
 	void Render(sf::RenderWindow& window);
 	void UIRender();
+	void SetMap(Map* map);
 
 	static GLuint shaderProgram;
 	static GLuint model_location;
@@ -31,7 +35,7 @@ public:
 
 private:
 	std::shared_ptr<FreeCamera> f_Cam = std::make_shared<FreeCamera>();
-	Map* m_map;
+	Map* m_pmap;
 	int m_screenWidth;
 	int m_screenHeight;
 	float fps;

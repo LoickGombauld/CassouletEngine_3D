@@ -1,25 +1,13 @@
 #include <CassouletEngineLibrarie/Doom/WADReader.h>
-#include <Iostream>
+#include <CassouletEngineLibrarie/System/Helper.h>
+#include <CassouletEngineLibrarie/Doom/DataTypes.h>
+
 WADReader::WADReader()
 {
 }
 
 WADReader::~WADReader()
 {
-}
-
-uint16_t WADReader::Read2Bytes(const uint8_t* pWADData, int offset)
-{
-    uint16_t ReadValue;
-    std::memcpy(&ReadValue, pWADData + offset, sizeof(uint16_t));
-    return ReadValue;
-}
-
-uint32_t WADReader::Read4Bytes(const uint8_t* pWADData, int offset)
-{
-    uint32_t ReadValue;
-    std::memcpy(&ReadValue, pWADData + offset, sizeof(uint32_t));
-    return ReadValue;
 }
 
 void WADReader::ReadHeaderData(const uint8_t* pWADData, int offset, Header& header)

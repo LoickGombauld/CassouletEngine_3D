@@ -89,4 +89,5 @@ protected:
 	FreeCamera* m_camera;
 
 	std::map<int, Mesh*> m_SubsectorMeshes;
+	std::vector<Mesh*> m_LindefMeshes;
 };

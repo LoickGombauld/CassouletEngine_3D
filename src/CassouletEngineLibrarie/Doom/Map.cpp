@@ -27,9 +27,9 @@ Map::~Map()
 void Map::Init()
 {
 	m_camera->position = glm::vec3(m_pThings->GetThingByID(1).XPosition / SCALE, 1, m_pThings->GetThingByID(1).YPosition / SCALE);
-	LoadVertices();
+	//LoadVertices();
 	BuildSectors();
-	RescaleSectors();
+	//RescaleSectors();
 	BuildSidedefs();
 	BuildLinedef();
 	BuildSeg();
@@ -345,10 +345,10 @@ void Map::InitSectorsMesh() {
 
 			if (!startVertex || !endVertex || !sector) continue;
 
-			glm::vec3 startFloor(startVertex->XPosition, sector->FloorHeight, startVertex->YPosition);
-			glm::vec3 endFloor(endVertex->XPosition, sector->FloorHeight, endVertex->YPosition);
-			glm::vec3 startCeiling(startVertex->XPosition, sector->CeilingHeight, startVertex->YPosition);
-			glm::vec3 endCeiling(endVertex->XPosition, sector->CeilingHeight, endVertex->YPosition);
+			glm::vec3 startFloor(startVertex->XPosition / SCALE, sector->FloorHeight / SCALE, startVertex->YPosition / SCALE);
+			glm::vec3 endFloor(endVertex->XPosition / SCALE, sector->FloorHeight / SCALE, endVertex->YPosition / SCALE);
+			glm::vec3 startCeiling(startVertex->XPosition / SCALE, sector->CeilingHeight / SCALE, startVertex->YPosition / SCALE);
+			glm::vec3 endCeiling(endVertex->XPosition / SCALE, sector->CeilingHeight / SCALE, endVertex->YPosition / SCALE);
 
 			glm::vec3 normal = glm::normalize(glm::cross(endFloor - startFloor, startCeiling - startFloor));
 
@@ -386,10 +386,10 @@ void Map::InitSectorsMesh() {
 
 				if (!startVertex || !endVertex || !sector) continue;
 
-				floorVerticesPos.push_back({ startVertex->XPosition, sector->FloorHeight, startVertex->YPosition });
-				floorVerticesPos.push_back({ endVertex->XPosition, sector->FloorHeight, endVertex->YPosition });
-				ceilingVerticesPos.push_back({ startVertex->XPosition, sector->CeilingHeight, startVertex->YPosition });
-				ceilingVerticesPos.push_back({ endVertex->XPosition, sector->CeilingHeight, endVertex->YPosition });
+				floorVerticesPos.push_back({ startVertex->XPosition / SCALE, sector->FloorHeight / SCALE, startVertex->YPosition / SCALE });
+				floorVerticesPos.push_back({ endVertex->XPosition / SCALE, sector->FloorHeight / SCALE, endVertex->YPosition / SCALE });
+				ceilingVerticesPos.push_back({ startVertex->XPosition / SCALE, sector->CeilingHeight / SCALE, startVertex->YPosition / SCALE });
+				ceilingVerticesPos.push_back({ endVertex->XPosition / SCALE, sector->CeilingHeight / SCALE, endVertex->YPosition / SCALE });
 			}
 
 			size_t floorStart = vertexOffset;
